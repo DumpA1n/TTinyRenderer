@@ -1,34 +1,62 @@
 #include "rasterizer.h"
 
+#include <iostream>
+#include <cmath> // round floor
+
 Rasterizer::Rasterizer(int width, int height) {
     this->width = width;
     this->height = height;
     frame_buffer.resize(width * height);
     depth_buffer.resize(width * height);
+    stb_frame_buffer.resize(width * height * 3);
 }
 
 int Rasterizer::get_index(int& x, int& y) {
-    return (height - y) * width + x;
+    // return (height - y) * width + x;
+    return y * width + x;
 }
-void Rasterizer::set_pixel(Point& p, Vector3f& col) {
+void Rasterizer::set_pixel(Point&& p, Vector3f& col) {
     if (p.x < 0 || p.x >= width ||
         p.y < 0 || p.y >= height) return;
-    int index = (height - p.y) * width + p.x;
-    frame_buffer[index] = Vector3c{(char)(col.x * 255.0f), (char)(col.y * 255.0f), (char)(col.z * 255.0f)};
+    // int index = (height - p.y) * width + p.x;
+    int index = p.y * width + p.x;
+    frame_buffer[index] = Vector3c{(int8_t)(col.x * 255.0f), (int8_t)(col.y * 255.0f), (int8_t)(col.z * 255.0f)};
+    stb_frame_buffer[index * 3 + 0] = frame_buffer[index].x;
+    stb_frame_buffer[index * 3 + 1] = frame_buffer[index].y;
+    stb_frame_buffer[index * 3 + 2] = frame_buffer[index].z;
 }
 
 void Rasterizer::clear_buffer() {
     for (int i = 0; i < width * height; i++) {
         frame_buffer[i] = Vector3c{0, 0, 0};
         depth_buffer[i] = 0xFFFF7F7F;
+        stb_frame_buffer[i * 3] = 0;
     }
 }
 std::vector<Vector3c> Rasterizer::get_frame_buffer() {
     return frame_buffer;
 }
+std::vector<uint8_t> Rasterizer::get_stb_frame_buffer() {
+    return stb_frame_buffer;
+}
+
 
 void Rasterizer::draw_line(Point& p1, Point& p2, Vector3f& col) {
-    
+    float x1 = std::floor(p1.x), y1 = std::floor(p1.y);
+    float x2 = std::floor(p2.x), y2 = std::floor(p2.y);
+
+    float dx = abs(x2 - x1), dy = abs(y2 - y1);
+    float sx = (x1 < x2) ? 1 : -1;
+    float sy = (y1 < y2) ? 1 : -1;
+    float err = dx - dy;
+
+    while (true) {
+        set_pixel(Point{x1, y1}, col);
+        if (x1 == x2 && y1 == y2) break;
+        float e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x1 += sx; }
+        if (e2 < dx)  { err += dx; y1 += sy; }
+    }
 }
 void Rasterizer::draw_triangle(std::vector<Point>& ps, Vector3f& col) {
     draw_line(ps[0], ps[1], col);

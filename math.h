@@ -45,6 +45,7 @@ struct Vector3c : Vector<3, char> {
 };
 
 struct Point : Vector3f {
+    float x = data[0], y = data[1], z = 1.0f;
 };
 
 struct Matrix4f {
