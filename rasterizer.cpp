@@ -67,11 +67,10 @@ void Rasterizer::draw_triangle(std::vector<Vector3f>& ps, Vector3f& col) {
     draw_line(ps[2], ps[0], col);
 }
 bool inside_triangle(const Vector3f& p, const Vector3f* tri) {
-    return 1;
-    // float n1 = (tri[1] - tri[0]).cross(p - tri[0]).z;
-    // float n2 = (tri[2] - tri[1]).cross(p - tri[1]).z;
-    // float n3 = (tri[0] - tri[2]).cross(p - tri[2]).z;
-    // return (n1 > 0 && n2 > 0 && n3 > 0) || (n1 < 0 && n2 < 0 && n3 < 0);
+    float n1 = (tri[1] - tri[0]).cross(p - tri[0]).z;
+    float n2 = (tri[2] - tri[1]).cross(p - tri[1]).z;
+    float n3 = (tri[0] - tri[2]).cross(p - tri[2]).z;
+    return (n1 > 0 && n2 > 0 && n3 > 0) || (n1 < 0 && n2 < 0 && n3 < 0);
 }
 void Rasterizer::draw_triangle_fill(std::vector<Vector3f>& ps, Vector3f& col) {
     Vector3f bottomleft{std::min(std::min(ps[0].x, ps[1].x), ps[2].x), std::min(std::min(ps[0].y, ps[1].y), ps[2].y)};

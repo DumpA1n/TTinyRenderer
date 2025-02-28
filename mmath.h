@@ -2,134 +2,58 @@
 
 #include <cmath>
 #include <cstring>
+#include <array>
 
-template<int n, typename T> struct Vector {
-    T data[n] = {0};
-    T& operator[](int idx)       { assert(idx >= 0 && idx < n); return data[idx]; }
-    T  operator[](int idx) const { assert(idx >= 0 && idx < n); return data[idx]; }
-
-    Vector<n, T> operator+(T value) const {
-        Vector<n, T> result = *this;
-        for (int i = 0; i < n; i++) { result.data[i] += value; }
-        return result;
-    }
-    Vector<n, T> operator-(T value) const {
-        Vector<n, T> result = *this;
-        for (int i = 0; i < n; i++) { result.data[i] -= value; }
-        return result;
-    }
-    Vector<n, T> operator*(T value) const {
-        Vector<n, T> result = *this;
-        for (int i = 0; i < n; i++) { result.data[i] *= value; }
-        return result;
-    }
-    Vector<n, T> operator/(T value) const {
-        if (value == 0) throw std::runtime_error("Division by zero");
-        Vector<n, T> result;
-        for (int i = 0; i < n; i++) { result.data[i] = data[i] / value; }
-        return result;
-    }
-    Vector<n, T> operator+(const Vector<n, T>& other) const {
-        Vector<n, T> result;
-        for (int i = 0; i < n; i++) { result.data[i] = data[i] + other.data[i]; }
-        return result;
-    }
-    Vector<n, T> operator-(const Vector<n, T>& other) const {
-        Vector<n, T> result;
-        for (int i = 0; i < n; i++) { result.data[i] = data[i] - other.data[i]; }
-        return result;
-    }
-    inline double norm() {
-        double sum = 0;
-        for (int i = 0; i < n; i++) { sum += data[i] * data[i]; }
-        return sqrt(sum);
-    }
-    inline Vector<n, T> normalized() { return *this / norm(); }
+struct Vector3f {
+    float x, y, z;
+    Vector3f() : x(0), y(0), z(0) {}
+    Vector3f(float v) : x(v), y(v), z(v) {}
+    Vector3f(float _x, float _y, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
+    Vector3f(int _x, int _y, int _z = 0) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)) {}
+    Vector3f operator+(const Vector3f& o) const { return Vector3f{x + o.x, y + o.y, z + o.z}; }
+    Vector3f operator-(const Vector3f& o) const { return Vector3f{x - o.x, y - o.y, z - o.z}; }
+    inline Vector3f cross(const Vector3f& o) const { return {y*o.z - z*o.y, z*o.x - x*o.z, x*o.y - y*o.x}; }
 };
 
-template<> struct Vector<3, float> {
-    float x = 0, y = 0, z = 0;
+struct Vector4f {
+    float x, y, z, w;
+    Vector4f() : x(0), y(0), z(0), w(0) {}
+    Vector4f(float v) : x(v), y(v), z(v), w(v) {}
+    Vector4f(int _x, int _y, int _z, int _w = 0) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)), w(static_cast<float>(_w)) {}
+    Vector4f(const Vector3f o, float _w = 0.0f) : x(o.x), y(o.y), z(o.z), w(_w) {}
 };
 
-template<> struct Vector<3, char> {
-    char x = 0, y = 0, z = 0;
+struct Vector3c {
+    char x, y, z;
+    Vector3c() : x(0), y(0), z(0) {}
+    Vector3c(char v) : x(v), y(v), z(v) {}
+    Vector3c(char _x, char _y, char _z = 0) : x(_x), y(_y), z(_z) {}
 };
 
-template<> struct Vector<2, int> {
-    int x = 0, y = 0;
+struct Vector2i {
+    int x, y;
+    Vector2i() : x(0), y(0) {}
+    Vector2i(int v) : x(v), y(v) {}
+    Vector2i(int _x, int _y) : x(_x), y(_y) {}
 };
-
-typedef Vector<3, float> Vector3f;
-typedef Vector<3, char> Vector3c;
-typedef Vector<2, int> Vector2i;
-
-// struct Vector3f : Vector<3, float> {
-//     float &x, &y, &z;
-//     Vector3f() : x(data[0]), y(data[1]), z(data[2]) {}
-//     Vector3f(float _x, float _y, float _z = 0.0f) : x(data[0]), y(data[1]), z(data[2]) {
-//         x = _x;
-//         y = _y;
-//         z = _z;
-//     }
-//     Vector3f(const Vector3f& v) : x(data[0]), y(data[1]), z(data[2]) {
-//         data[0] = v.x;
-//         data[1] = v.y;
-//         data[2] = v.z;
-//     }
-//     Vector3f& operator=(const Vector3f& v) {
-//         if (this != &v) {
-//             data[0] = v.x;
-//             data[1] = v.y;
-//             data[2] = v.z;
-//         }
-//         return *this;
-//     }
-//     Vector3f operator-(const Vector3f& other) const { return Vector3f(x - other.x, y - other.y, z - other.z); }
-//     Vector3f cross(const Vector3f& o) const { return {y*o.z - z*o.y, z*o.x - x*o.z, x*o.y - y*o.x}; }
-// };
-
-// struct Vector3c : Vector<3, char> {
-//     char &x, &y, &z;
-//     Vector3c() : x(data[0]), y(data[1]), z(data[2]) {}
-//     Vector3c(char _x, char _y, char _z = 0) : x(data[0]), y(data[1]), z(data[2]) {
-//         x = _x;
-//         y = _y;
-//         z = _z;
-//     }
-//     Vector3c(const Vector3c& v) : x(data[0]), y(data[1]), z(data[2]) {
-//         data[0] = v.x;
-//         data[1] = v.y;
-//         data[2] = v.z;
-//     }
-//     Vector3c& operator=(const Vector3c& v) {
-//         if (this != &v) {
-//             data[0] = v.x;
-//             data[1] = v.y;
-//             data[2] = v.z;
-//         }
-//         return *this;
-//     }
-// };
-
-// struct Vector2i : Vector<2, int> {
-//     int &x, &y;
-//     Vector2i() : x(data[0]), y(data[1]) {}
-//     Vector2i(int _x, int _y) : x(data[0]), y(data[1]) {
-//         x = _x;
-//         y = _y;
-//     }
-// };
 
 struct Matrix4f {
-    float m[4][4];
-
-    Matrix4f() { memset(m, 0, sizeof(m)); }
-    Matrix4f(const float* other) {
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                m[i][j] = other[i * 4 + j];
-            }
-        }
+    std::array<std::array<float, 4>, 4> m;
+    Matrix4f() { memset(m.data(), 0, sizeof(m)); }
+    Matrix4f(float m00, float m01, float m02, float m03,
+              float m10, float m11, float m12, float m13,
+              float m20, float m21, float m22, float m23,
+              float m30, float m31, float m32, float m33) {
+        m = {{{m00, m01, m02, m03}, 
+              {m10, m11, m12, m13}, 
+              {m20, m21, m22, m23}, 
+              {m30, m31, m32, m33}}};
+    }
+    Matrix4f(const Vector4f& row0, const Vector4f& row1, const Vector4f& row2, const Vector4f& row3) {
+        m = {{{row0.x, row0.y, row0.z, row0.w},
+              {row1.x, row1.y, row1.z, row1.w},
+              {row2.x, row2.y, row2.z, row2.w},
+              {row3.x, row3.y, row3.z, row3.w}}};
     }
     static Matrix4f identity() {
         Matrix4f im;
@@ -139,12 +63,21 @@ struct Matrix4f {
         return im;
     }
     Matrix4f operator*(const Matrix4f& other) {
-        Matrix4f nm;
+        Matrix4f result;
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                nm.m[i][j] = m[i][j] * other.m[i][j];
+                result.m[i][j] = 0;
+                for (int k = 0; k < 4; k++) {
+                    result.m[i][j] += m[i][k] * other.m[k][j];
+                }
             }
         }
-        return nm;
+        return result;
+    }
+    Vector3f operator*(const Vector3f& v) const {
+        float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * 1.0f;
+        float y_new = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * 1.0f;
+        float z_new = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * 1.0f;
+        return Vector3f(x_new, y_new, z_new);
     }
 };
