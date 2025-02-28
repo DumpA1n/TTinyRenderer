@@ -32,22 +32,26 @@ int main() {
     //             float r = i / WIDTH;
     //             float g = j / HEIGHT;
     //             float b = 0.5f * (sin(get_time()*0.001f) + 1.0f);
-    //             rst.set_pixel(Point{(float)i, (float)j}, Vector3f{r, g, b});
+    //             rst.set_pixel(Vector3f{(float)i, (float)j}, Vector3f{r, g, b});
     //         }
     //     }
     //     stbi_write_png("out.png", WIDTH, HEIGHT, 3, rst.get_stb_frame_buffer().data(), WIDTH * 3);
     // }
 
-    // std::vector<Vector3f> points{{2, 0, -2}, {0, 2, -2}, {-2, 0, -2}};
+    // std::vector<Vector3f> Vector3fs{{2, 0, -2}, {0, 2, -2}, {-2, 0, -2}};
 
     Vector3f color{1.0f, 1.0f, 1.0f};
-    // rst.set_pixel(Point{0, 0}, color);
-    // rst.set_pixel(Point{1, 1}, color);
-    // rst.set_pixel(Point{2, 2}, color);
-    // rst.set_pixel(Point{3, 3}, color);
-    // rst.set_pixel(Point{4, 4}, color);
-    // rst.set_pixel(Point{5, 5}, color);
-    rst.draw_line(Point{1, 124}, Point{142, 33}, color);
+    // rst.set_pixel(Vector3f{0, 0}, color);
+    // rst.set_pixel(Vector3f{1, 1}, color);
+    // rst.set_pixel(Vector3f{2, 2}, color);
+    // rst.set_pixel(Vector3f{3, 3}, color);
+    // rst.set_pixel(Vector3f{4, 4}, color);
+    // rst.set_pixel(Vector3f{5, 5}, color);
+    rst.draw_line(Vector3f{1, 124}, Vector3f{142, 33}, color);
+    // std::vector<Vector3f> pos{{123, 12, -123}, {12, 123, -123}, {-123, 12, -123}};
+    std::vector<Vector3f> pos{{100, 100}, {50, 50}, {150, 50}};
+    rst.draw_triangle(pos, color);
+    rst.draw_triangle_fill(pos, color);
     stbi_write_png("out.png", WIDTH, HEIGHT, 3, rst.get_stb_frame_buffer().data(), WIDTH * 3);
 
 
