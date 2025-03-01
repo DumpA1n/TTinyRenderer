@@ -43,8 +43,14 @@ std::vector<uint8_t> Rasterizer::get_stb_frame_buffer() {
     return stb_frame_buffer;
 }
 
+void Rasterizer::set_vertex_shader(void* fn) {
+    *(void**)(&vertex_shader) = fn;
+}
+void Rasterizer::set_fragment_shader(void* fn) {
+    *(void**)(&fragment_shader) = fn;
+}
 
-void Rasterizer::draw_line(Vector3f& p1, Vector3f& p2, Vector3f& col) {
+void Rasterizer::draw_line(const Vector3f& p1, const Vector3f& p2, const Vector3f& col) {
     int x1 = round(p1.x), y1 = round(p1.y);
     int x2 = round(p2.x), y2 = round(p2.y);
 
@@ -54,14 +60,14 @@ void Rasterizer::draw_line(Vector3f& p1, Vector3f& p2, Vector3f& col) {
     int err = dx - dy;
 
     while (true) {
-        set_pixel({x1, y1}, col);
+        set_pixel({(float)x1, (float)y1}, col);
         if (x1 == x2 && y1 == y2) break;
         int e2 = 2 * err;
         if (e2 > -dy) { err -= dy; x1 += sx; }
         if (e2 < dx)  { err += dx; y1 += sy; }
     }
 }
-void Rasterizer::draw_triangle(std::vector<Vector3f>& ps, Vector3f& col) {
+void Rasterizer::draw_triangle(const std::vector<Vector3f>& ps, const Vector3f& col) {
     draw_line(ps[0], ps[1], col);
     draw_line(ps[1], ps[2], col);
     draw_line(ps[2], ps[0], col);
@@ -72,7 +78,7 @@ bool inside_triangle(const Vector3f& p, const Vector3f* tri) {
     float n3 = (tri[0] - tri[2]).cross(p - tri[2]).z;
     return (n1 > 0 && n2 > 0 && n3 > 0) || (n1 < 0 && n2 < 0 && n3 < 0);
 }
-void Rasterizer::draw_triangle_fill(std::vector<Vector3f>& ps, Vector3f& col) {
+void Rasterizer::draw_triangle_fill(const std::vector<Vector3f>& ps, const Vector3f& col) {
     Vector3f bottomleft{std::min(std::min(ps[0].x, ps[1].x), ps[2].x), std::min(std::min(ps[0].y, ps[1].y), ps[2].y)};
     Vector3f topright{std::max(std::max(ps[0].x, ps[1].x), ps[2].x), std::max(std::max(ps[0].y, ps[1].y), ps[2].y)};
 
@@ -84,4 +90,9 @@ void Rasterizer::draw_triangle_fill(std::vector<Vector3f>& ps, Vector3f& col) {
             }
         }
     }
+}
+
+
+void draw(std::vector<Triangle*> triangels) {
+    
 }

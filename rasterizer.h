@@ -1,6 +1,8 @@
 #pragma once
 
 #include "mmath.h"
+#include "shader.h"
+#include "triangle.h"
 
 #include <vector>
 
@@ -22,9 +24,14 @@ public:
     std::vector<Vector3c> get_frame_buffer();
     std::vector<uint8_t> get_stb_frame_buffer();
 
-    void draw_line(Vector3f& p1, Vector3f& p2, Vector3f& col);
-    void draw_triangle(std::vector<Vector3f>& ps, Vector3f& col);
-    void draw_triangle_fill(std::vector<Vector3f>& ps, Vector3f& col);
+    Vector3f (*vertex_shader)(const vertex_shader_payload& payload);
+    Vector3f (*fragment_shader)(const fragment_shader_payload& payload);
+    void set_vertex_shader(void* fn);
+    void set_fragment_shader(void* fn);
 
-    void draw();
+    void draw_line(const Vector3f& p1, const Vector3f& p2, const Vector3f& col);
+    void draw_triangle(const std::vector<Vector3f>& ps, const Vector3f& col);
+    void draw_triangle_fill(const std::vector<Vector3f>& ps, const Vector3f& col);
+
+    void draw(std::vector<Triangle*> triangels);
 };

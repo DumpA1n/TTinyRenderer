@@ -8,10 +8,11 @@ struct Vector3f {
     float x, y, z;
     Vector3f() : x(0), y(0), z(0) {}
     Vector3f(float v) : x(v), y(v), z(v) {}
+    Vector3f(int _x, int _y) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(0) {}
     Vector3f(float _x, float _y, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
-    Vector3f(int _x, int _y, int _z = 0) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)) {}
     Vector3f operator+(const Vector3f& o) const { return Vector3f{x + o.x, y + o.y, z + o.z}; }
     Vector3f operator-(const Vector3f& o) const { return Vector3f{x - o.x, y - o.y, z - o.z}; }
+    Vector3f operator*(const Vector3f& o) const { return Vector3f{x * o.x, y * o.y, z * o.z}; }
     inline Vector3f cross(const Vector3f& o) const { return {y*o.z - z*o.y, z*o.x - x*o.z, x*o.y - y*o.x}; }
 };
 
@@ -19,7 +20,8 @@ struct Vector4f {
     float x, y, z, w;
     Vector4f() : x(0), y(0), z(0), w(0) {}
     Vector4f(float v) : x(v), y(v), z(v), w(v) {}
-    Vector4f(int _x, int _y, int _z, int _w = 0) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)), w(static_cast<float>(_w)) {}
+    Vector4f(float _x, float _y, float _z, float _w = 0.0f) : x(_x), y(_y), z(_z), w(_w) {}
+    // Vector4f(int _x, int _y, int _z, int _w = 0) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)), w(static_cast<float>(_w)) {}
     Vector4f(const Vector3f o, float _w = 0.0f) : x(o.x), y(o.y), z(o.z), w(_w) {}
 };
 
