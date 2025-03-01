@@ -82,17 +82,30 @@ void Rasterizer::draw_triangle_fill(const std::vector<Vector3f>& ps, const Vecto
     Vector3f bottomleft{std::min(std::min(ps[0].x, ps[1].x), ps[2].x), std::min(std::min(ps[0].y, ps[1].y), ps[2].y)};
     Vector3f topright{std::max(std::max(ps[0].x, ps[1].x), ps[2].x), std::max(std::max(ps[0].y, ps[1].y), ps[2].y)};
 
-    for (int x = std::floor(bottomleft.x); x < topright.x; x++) {
-        for (int y = std::floor(bottomleft.y); y < topright.y; y++) {
+    for (int x = std::floor(bottomleft.x); x <= std::ceil(topright.x); x++) {
+        for (int y = std::floor(bottomleft.y); y <= std::ceil(topright.y); y++) {
             Vector3f thizp{(float)x, (float)y};
             if (inside_triangle(thizp, ps.data())) {
-                set_pixel(thizp, {1.0f, 1.0f, 1.0f});
+                set_pixel(thizp, col);
+            }
+        }
+    }
+}
+void Rasterizer::draw_triangle_filled(Triangle* tri) {
+    Vector3f* p = tri->vertices;
+    Vector3f bottomleft{std::min(std::min(p[0].x, p[1].x), p[2].x), std::min(std::min(p[0].y, p[1].y), p[2].y)};
+    Vector3f topright{std::max(std::max(p[0].x, p[1].x), p[2].x), std::max(std::max(p[0].y, p[1].y), p[2].y)};
+    for (int x = std::floor(bottomleft.x); x <= std::ceil(topright.x); x++) {
+        for (int y = std::floor(bottomleft.y); y <= std::ceil(topright.y); y++) {
+            Vector3f thizp{(float)x, (float)y};
+            if (inside_triangle(thizp, p)) {
+                set_pixel(thizp, tri->color[0]);
             }
         }
     }
 }
 
 
-void draw(std::vector<Triangle*> triangels) {
+void Rasterizer::draw(std::vector<Triangle*> triangels) {
     
 }

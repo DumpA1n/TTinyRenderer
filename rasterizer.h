@@ -32,6 +32,7 @@ public:
     void draw_line(const Vector3f& p1, const Vector3f& p2, const Vector3f& col);
     void draw_triangle(const std::vector<Vector3f>& ps, const Vector3f& col);
     void draw_triangle_fill(const std::vector<Vector3f>& ps, const Vector3f& col);
+    void draw_triangle_filled(Triangle* tri);
 
     void draw(std::vector<Triangle*> triangels);
 };
