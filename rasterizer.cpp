@@ -56,6 +56,9 @@ static std::tuple<float, float, float> computeBarycentric2D(float x, float y, co
     float c3 = (x*(v[0].y - v[1].y) + (v[1].x - v[0].x)*y + v[0].x*v[1].y - v[1].x*v[0].y) / (v[2].x*(v[0].y - v[1].y) + (v[1].x - v[0].x)*v[2].y + v[0].x*v[1].y - v[1].x*v[0].y);
     return {c1,c2,c3};
 }
+static Vector3f interpolate(float alpha, float beta, float gamma, const Vector3f& vert1, const Vector3f& vert2, const Vector3f& vert3, float weight) {
+    return (vert1 * alpha + vert2 * beta + vert3 * gamma) / weight;
+}
 
 void Rasterizer::draw_line(const Vector3f& p1, const Vector3f& p2, const Vector3f& col) {
     int x1 = round(p1.x), y1 = round(p1.y);
@@ -115,7 +118,10 @@ void Rasterizer::draw_triangle_filled(Triangle* t) {
                 float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w;
                 zp *= Z;
                 if (zp < depth_buffer[thizp.y * width + thizp.x]) {
-                    set_pixel(thizp, fragment_shader({t->color[0], (t->normals[0]+t->normals[1]+t->normals[2])/3.0f, t->texCoords[0]}));
+                    Vector3f interpolated_color = interpolate(alpha, beta, gamma, t->color[0], t->color[1], t->color[2], 1);
+                    Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals[0], t->normals[1], t->normals[2], 1);
+                    Vector3f interpolated_texcoords = interpolate(alpha, beta, gamma, t->texCoords[0], t->texCoords[1], t->texCoords[2], 1);
+                    set_pixel(thizp, fragment_shader({interpolated_color, interpolated_normal, interpolated_texcoords}));
                     depth_buffer[thizp.y * width + thizp.x] = zp;
                 }
             }
@@ -138,6 +144,9 @@ void Rasterizer::draw(std::vector<Triangle*> triangels) {
         //     vert.z = vert.z * f1 + f2;
         // }
 
+        t->vertices[0] = vertex_shader({t->vertices[0]});
+        t->vertices[1] = vertex_shader({t->vertices[1]});
+        t->vertices[2] = vertex_shader({t->vertices[2]});
         for (int i = 0; i < 3; i++) {
             t->vertices[i].x = width*0.5f*(t->vertices[i].x+1.0f);
             t->vertices[i].y = height*(1.0f - 0.5f*(t->vertices[i].y+1.0f));

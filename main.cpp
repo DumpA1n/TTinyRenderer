@@ -17,66 +17,67 @@ long long get_time() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-// Matrix4f rotateX(float theta) {
-//     float c = cos(theta);
-//     float s = sin(theta);
-//     return Matrix4f(
-//         Vector4f{1.0f,  0.0f,  0.0f, 0.0f},
-//         Vector4f{0.0f,     c,    -s, 0.0f},
-//         Vector4f{0.0f,     s,     c, 0.0f},
-//         Vector4f{0.0f,  0.0f,  0.0f, 1.0f}
-//     );
-// }
+Matrix4f rotateX(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return Matrix4f(
+        Vector4f{1.0f,  0.0f,  0.0f, 0.0f},
+        Vector4f{0.0f,     c,    -s, 0.0f},
+        Vector4f{0.0f,     s,     c, 0.0f},
+        Vector4f{0.0f,  0.0f,  0.0f, 1.0f}
+    );
+}
 
-// Matrix4f rotateY(float theta) {
-//     float c = cos(theta);
-//     float s = sin(theta);
-//     return Matrix4f{
-//         Vector4f{    c,  0.0f,     s, 0.0f},
-//         Vector4f{ 0.0f,  1.0f,  0.0f, 0.0f},
-//         Vector4f{   -s,  0.0f,     c, 0.0f},
-//         Vector4f{ 0.0f,  0.0f,  0.0f, 1.0f}
-//     };
-// }
+Matrix4f rotateY(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return Matrix4f{
+        Vector4f{    c,  0.0f,     s, 0.0f},
+        Vector4f{ 0.0f,  1.0f,  0.0f, 0.0f},
+        Vector4f{   -s,  0.0f,     c, 0.0f},
+        Vector4f{ 0.0f,  0.0f,  0.0f, 1.0f}
+    };
+}
 
-// Matrix4f rotateZ(float theta) {
-//     float c = cos(theta);
-//     float s = sin(theta);
-//     return Matrix4f{
-//         Vector4f{    c,    -s,  0.0f, 0.0f},
-//         Vector4f{    s,     c,  0.0f, 0.0f},
-//         Vector4f{ 0.0f,  0.0f,  1.0f, 0.0f},
-//         Vector4f{ 0.0f,  0.0f,  0.0f, 1.0f}
-//     };
-// }
+Matrix4f rotateZ(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return Matrix4f{
+        Vector4f{    c,    -s,  0.0f, 0.0f},
+        Vector4f{    s,     c,  0.0f, 0.0f},
+        Vector4f{ 0.0f,  0.0f,  1.0f, 0.0f},
+        Vector4f{ 0.0f,  0.0f,  0.0f, 1.0f}
+    };
+}
 
-// Matrix4f get_transform_matrix(Vector3f scale, Vector3f rotate, Vector3f model) {
-//     Matrix4f mscale{
-//         Vector4f{scale.x, 0.0f, 0.0f, 0.0f},
-//         Vector4f{0.0f, scale.y, 0.0f, 0.0f},
-//         Vector4f{0.0f, 0.0f, scale.z, 0.0f},
-//         Vector4f{0.0f, 0.0f, 0.0f, 1.0f}
-//     };
-//     Matrix4f mrotate = rotateX(rotate.x) * rotateY(rotate.y) * rotateZ(rotate.z);
-//     Matrix4f mmodel{
-//         Vector4f{1.0f, 0.0f, 0.0f, model.x},
-//         Vector4f{0.0f, 1.0f, 0.0f, model.y},
-//         Vector4f{0.0f, 0.0f, 1.0f, model.z},
-//         Vector4f{0.0f, 0.0f, 0.0f, 1.0f}
-//     };
-//     return mmodel * mrotate * mscale;
-// }
+Matrix4f get_transform_matrix(Vector3f scale, Vector3f rotate, Vector3f model) {
+    Matrix4f mscale{
+        Vector4f{scale.x, 0.0f, 0.0f, 0.0f},
+        Vector4f{0.0f, scale.y, 0.0f, 0.0f},
+        Vector4f{0.0f, 0.0f, scale.z, 0.0f},
+        Vector4f{0.0f, 0.0f, 0.0f, 1.0f}
+    };
+    Matrix4f mrotate = rotateX(rotate.x) * rotateY(rotate.y) * rotateZ(rotate.z);
+    Matrix4f mmodel{
+        Vector4f{1.0f, 0.0f, 0.0f, model.x},
+        Vector4f{0.0f, 1.0f, 0.0f, model.y},
+        Vector4f{0.0f, 0.0f, 1.0f, model.z},
+        Vector4f{0.0f, 0.0f, 0.0f, 1.0f}
+    };
+    return mmodel * mrotate * mscale;
+}
 
 Matrix4f get_model_matrix(const Vector3f scale, const Vector3f rotate, const Vector3f translate) {
-    float cx = cos(rotate.x), sx = sin(rotate.x);
-    float cy = cos(rotate.y), sy = sin(rotate.y);
-    float cz = cos(rotate.z), sz = sin(rotate.z);
-    return Matrix4f{
-        scale.x * (cy * cz), scale.x * (cz * sx * sy - cx * sz), scale.x * (cx * cz * sy + sx * sz), translate.x,
-        scale.y * (cy * sz), scale.y * (cx * cz + sx * sy * sz), scale.y * (cx * sy * sz - cz * sx), translate.y,
-        scale.z * (-sy)    , scale.z * (cy * sx)               , scale.z * (cx * cy)               , translate.z,
-        0.0f               , 0.0f                              , 0.0f                              , 1.0f
-    };
+    // float cx = cos(rotate.x), sx = sin(rotate.x);
+    // float cy = cos(rotate.y), sy = sin(rotate.y);
+    // float cz = cos(rotate.z), sz = sin(rotate.z);
+    // return Matrix4f{
+    //     scale.x * (cy * cz), scale.x * (cz * sx * sy - cx * sz), scale.x * (cx * cz * sy + sx * sz), translate.x,
+    //     scale.y * (cy * sz), scale.y * (cx * cz + sx * sy * sz), scale.y * (cx * sy * sz - cz * sx), translate.y,
+    //     scale.z * (-sy)    , scale.z * (cy * sx)               , scale.z * (cx * cy)               , translate.z,
+    //     0.0f               , 0.0f                              , 0.0f                              , 1.0f
+    // };
+    return rotateY(rotate.y);
 }
 
 Matrix4f get_view_matrix(const Vector3f eye_pos)
@@ -98,11 +99,12 @@ Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, f
 }
 
 Vector3f default_vertex_shader(const vertex_shader_payload& payload) {
-    Vector3f angle{0.0f, 140.0f, 0.0f};
-    Vector3f eye_pos{0.0f, 0.0f, 10.0f};
-    return get_model_matrix({1.0f}, angle, {0.0f}) * 
-                get_view_matrix(eye_pos) * 
-                    get_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f) * payload.position;
+    Vector3f angle{0.0f, 160.0f, 0.0f};
+    // Vector3f eye_pos{0.0f, 0.0f, 10.0f};
+    // return get_model_matrix({1.0f}, angle, {0.0f}) * 
+    //             get_view_matrix(eye_pos) * 
+    //                 get_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f) * payload.position;
+    return get_model_matrix({1.0f}, angle, {0.0f}) * payload.position;
 }
 
 Vector3f default_fragment_shader(const fragment_shader_payload& payload) {
