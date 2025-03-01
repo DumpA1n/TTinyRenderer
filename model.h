@@ -50,11 +50,11 @@ public:
             else if (type == "f") {
                 std::string vertexInfo;
                 while (iss >> vertexInfo) {
-                    std::replace(vertexInfo.begin(), vertexInfo.end(), '/', ' '); // 替换 '/' 为 ' '
+                    std::replace(vertexInfo.begin(), vertexInfo.end(), '/', ' ');
                     std::istringstream vss(vertexInfo);
                     int vIdx, vtIdx, vnIdx;
                     vss >> vIdx >> vtIdx >> vnIdx;
-                    indices.push_back(vIdx - 1);  // OBJ 索引是从 1 开始，C++ 需要 -1
+                    indices.push_back(--vIdx);  // obj 索引从 1 开始
                 }
             }
         }

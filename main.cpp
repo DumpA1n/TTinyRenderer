@@ -190,32 +190,12 @@ int main() {
         // Vector3f color = rst.fragment_shader({{1.0f}, tri->normals[0], tri->texCoords[0]});
         // rst.draw_triangle_fill(ts, color);
 
-        rst.draw_triangle_filled(tri);
+        // rst.draw_triangle_filled(tri);
+        
         triangles.push_back(tri);
     }
+    rst.draw(triangles);
     stbi_write_png("out.png", WIDTH, HEIGHT, 3, rst.get_stb_frame_buffer().data(), WIDTH * 3);
-
-    // while (1) {
-    //     rst.clear_buffer();
-    //     for (int i = 0; i < WIDTH; i++) {
-    //         for (int j = 0; j < HEIGHT; j++) {
-    //             float r = i / WIDTH;
-    //             float g = j / HEIGHT;
-    //             float b = 0.5f * (sin(get_time()*0.001f) + 1.0f);
-    //             rst.set_pixel(Vector3f{(float)i, (float)j}, Vector3f{r, g, b});
-    //         }
-    //     }
-    //     stbi_write_png("out.png", WIDTH, HEIGHT, 3, rst.get_stb_frame_buffer().data(), WIDTH * 3);
-    // }
-
-    // std::vector<Vector3f> Vector3fs{{2, 0, -2}, {0, 2, -2}, {-2, 0, -2}};
-
-    // Vector3f color{1.0f, 1.0f, 1.0f};
-    // rst.draw_line(Vector3f{1, 124}, Vector3f{142, 33}, color);
-    // std::vector<Vector3f> pos{{100, 100}, {50, 50}, {150, 50}};
-    // rst.draw_triangle(pos, color);
-    // rst.draw_triangle_fill(pos, color);
-    // stbi_write_png("out.png", WIDTH, HEIGHT, 3, rst.get_stb_frame_buffer().data(), WIDTH * 3);
 
     return 0;
 }

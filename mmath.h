@@ -36,7 +36,7 @@ struct Vector4f {
     Vector4f(float v) : x(v), y(v), z(v), w(v) {}
     Vector4f(float _x, float _y, float _z, float _w = 0.0f) : x(_x), y(_y), z(_z), w(_w) {}
     Vector4f(int _x, int _y, int _z) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)), w(0) {}
-    Vector4f(const Vector3f o) : x(o.x), y(o.y), z(o.z), w(0) {}
+    Vector4f(const Vector3f o, float _w) : x(o.x), y(o.y), z(o.z), w(_w) {}
 };
 
 struct Vector3c {
