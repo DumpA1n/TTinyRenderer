@@ -49,6 +49,9 @@ void Rasterizer::set_vertex_shader(void* fn) {
 void Rasterizer::set_fragment_shader(void* fn) {
     *(void**)(&fragment_shader) = fn;
 }
+void Rasterizer::set_texture(Texture* tex) {
+    texture = tex;
+}
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector4f* v){
     float c1 = (x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*y + v[1].x*v[2].y - v[2].x*v[1].y) / (v[0].x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*v[0].y + v[1].x*v[2].y - v[2].x*v[1].y);
@@ -108,20 +111,23 @@ void Rasterizer::draw_triangle_filled(Triangle* t) {
     for (int x = std::floor(bottomleft.x); x <= std::ceil(topright.x); x++) {
         for (int y = std::floor(bottomleft.y); y <= std::ceil(topright.y); y++) {
             Vector3f thizp{(float)x, (float)y};
+            if (thizp.x < 0 || thizp.x >= width || thizp.y < 0 || thizp.y >= height) { continue; }
             if (inside_triangle(thizp, p)) {
-                Vector4f v[3];
-                v[0] = Vector4f{p[0], 1.0f};
-                v[1] = Vector4f{p[1], 1.0f};
-                v[2] = Vector4f{p[2], 1.0f};
+                Vector4f v[3] = { {p[0], 1.0f}, {p[1], 1.0f}, {p[2], 1.0f} };
                 auto[alpha, beta, gamma] = computeBarycentric2D(x, y, v);
                 float Z = 1.0 / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w);
                 float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w;
                 zp *= Z;
                 if (zp < depth_buffer[thizp.y * width + thizp.x]) {
-                    Vector3f interpolated_color = interpolate(alpha, beta, gamma, t->color[0], t->color[1], t->color[2], 1);
-                    Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals[0], t->normals[1], t->normals[2], 1);
-                    Vector3f interpolated_texcoords = interpolate(alpha, beta, gamma, t->texCoords[0], t->texCoords[1], t->texCoords[2], 1);
-                    set_pixel(thizp, fragment_shader({interpolated_color, interpolated_normal, interpolated_texcoords}));
+                    bool b_Triangle_Barycentric_Interpolation = true;
+                    if (b_Triangle_Barycentric_Interpolation) {
+                        Vector3f interpolated_color = interpolate(alpha, beta, gamma, t->color[0], t->color[1], t->color[2], 1);
+                        Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals[0], t->normals[1], t->normals[2], 1);
+                        Vector3f interpolated_texcoords = interpolate(alpha, beta, gamma, t->texCoords[0], t->texCoords[1], t->texCoords[2], 1);
+                        set_pixel(thizp, fragment_shader({interpolated_color, interpolated_normal, interpolated_texcoords, texture}));
+                    } else {
+                        set_pixel(thizp, fragment_shader({t->color[0], (t->normals[0]+t->normals[1]+t->normals[2])/3.0f, t->texCoords[0], texture}));
+                    }
                     depth_buffer[thizp.y * width + thizp.x] = zp;
                 }
             }

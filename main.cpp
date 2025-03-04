@@ -8,6 +8,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#include <math.h>
 #include <chrono>
 
 #define WIDTH 700
@@ -17,67 +18,24 @@ long long get_time() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-Matrix4f rotateX(float theta) {
-    float c = cos(theta);
-    float s = sin(theta);
-    return Matrix4f(
-        Vector4f{1.0f,  0.0f,  0.0f, 0.0f},
-        Vector4f{0.0f,     c,    -s, 0.0f},
-        Vector4f{0.0f,     s,     c, 0.0f},
-        Vector4f{0.0f,  0.0f,  0.0f, 1.0f}
-    );
-}
-
-Matrix4f rotateY(float theta) {
-    float c = cos(theta);
-    float s = sin(theta);
-    return Matrix4f{
-        Vector4f{    c,  0.0f,     s, 0.0f},
-        Vector4f{ 0.0f,  1.0f,  0.0f, 0.0f},
-        Vector4f{   -s,  0.0f,     c, 0.0f},
-        Vector4f{ 0.0f,  0.0f,  0.0f, 1.0f}
-    };
-}
-
-Matrix4f rotateZ(float theta) {
-    float c = cos(theta);
-    float s = sin(theta);
-    return Matrix4f{
-        Vector4f{    c,    -s,  0.0f, 0.0f},
-        Vector4f{    s,     c,  0.0f, 0.0f},
-        Vector4f{ 0.0f,  0.0f,  1.0f, 0.0f},
-        Vector4f{ 0.0f,  0.0f,  0.0f, 1.0f}
-    };
-}
-
-Matrix4f get_transform_matrix(Vector3f scale, Vector3f rotate, Vector3f model) {
-    Matrix4f mscale{
-        Vector4f{scale.x, 0.0f, 0.0f, 0.0f},
-        Vector4f{0.0f, scale.y, 0.0f, 0.0f},
-        Vector4f{0.0f, 0.0f, scale.z, 0.0f},
-        Vector4f{0.0f, 0.0f, 0.0f, 1.0f}
-    };
-    Matrix4f mrotate = rotateX(rotate.x) * rotateY(rotate.y) * rotateZ(rotate.z);
-    Matrix4f mmodel{
-        Vector4f{1.0f, 0.0f, 0.0f, model.x},
-        Vector4f{0.0f, 1.0f, 0.0f, model.y},
-        Vector4f{0.0f, 0.0f, 1.0f, model.z},
-        Vector4f{0.0f, 0.0f, 0.0f, 1.0f}
-    };
-    return mmodel * mrotate * mscale;
+constexpr float PI = 3.14159265358979323846f;
+float degrees_to_radians(float degree) {
+    return degree * (PI / 180.0f);
 }
 
 Matrix4f get_model_matrix(const Vector3f scale, const Vector3f rotate, const Vector3f translate) {
-    // float cx = cos(rotate.x), sx = sin(rotate.x);
-    // float cy = cos(rotate.y), sy = sin(rotate.y);
-    // float cz = cos(rotate.z), sz = sin(rotate.z);
-    // return Matrix4f{
-    //     scale.x * (cy * cz), scale.x * (cz * sx * sy - cx * sz), scale.x * (cx * cz * sy + sx * sz), translate.x,
-    //     scale.y * (cy * sz), scale.y * (cx * cz + sx * sy * sz), scale.y * (cx * sy * sz - cz * sx), translate.y,
-    //     scale.z * (-sy)    , scale.z * (cy * sx)               , scale.z * (cx * cy)               , translate.z,
-    //     0.0f               , 0.0f                              , 0.0f                              , 1.0f
-    // };
-    return rotateY(rotate.y);
+    float rx = degrees_to_radians(rotate.x);
+    float ry = degrees_to_radians(rotate.y);
+    float rz = degrees_to_radians(rotate.z);
+    float cx = cos(rx), sx = sin(rx);
+    float cy = cos(ry), sy = sin(ry);
+    float cz = cos(rz), sz = sin(rz);
+    return Matrix4f{
+        scale.x * (cy * cz), scale.x * (cz * sx * sy - cx * sz), scale.x * (cx * cz * sy + sx * sz), translate.x,
+        scale.y * (cy * sz), scale.y * (cx * cz + sx * sy * sz), scale.y * (cx * sy * sz - cz * sx), translate.y,
+        scale.z * (-sy)    , scale.z * (cy * sx)               , scale.z * (cx * cy)               , translate.z,
+        0.0f               , 0.0f                              , 0.0f                              , 1.0f
+    };
 }
 
 Matrix4f get_view_matrix(const Vector3f eye_pos)
@@ -99,7 +57,7 @@ Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, f
 }
 
 Vector3f default_vertex_shader(const vertex_shader_payload& payload) {
-    Vector3f angle{0.0f, 160.0f, 0.0f};
+    Vector3f angle{0.0f, 20.0f, 0.0f};
     // Vector3f eye_pos{0.0f, 0.0f, 10.0f};
     // return get_model_matrix({1.0f}, angle, {0.0f}) * 
     //             get_view_matrix(eye_pos) * 
@@ -108,9 +66,11 @@ Vector3f default_vertex_shader(const vertex_shader_payload& payload) {
 }
 
 Vector3f default_fragment_shader(const fragment_shader_payload& payload) {
-    
+    Vector3f texture_color = payload.texture->get_texture_color(payload.tex_coords.x, payload.tex_coords.y);
+    // return texture_color;
     Vector3f ka{0.005, 0.005, 0.005};
-    Vector3f kd = payload.color;
+    Vector3f kd = texture_color;
+    // std::cout << payload.tex_coords.x * WIDTH << "," << payload.tex_coords.y * HEIGHT << std::endl;
     Vector3f ks{0.7937, 0.7937, 0.7937};
 
     Light l1{{20, 20, 20}, {500, 500, 500}};
@@ -157,13 +117,16 @@ int main() {
 
     rst.set_vertex_shader((void*)&default_vertex_shader);
     rst.set_fragment_shader((void*)&default_fragment_shader);
+    
+    rst.set_texture(new Texture("../../models/spot/spot_texture.png"));
+    // rst.set_texture(new Texture("../../models/african_head/african_head_SSS.jpg"));
 
     std::vector<Triangle*> triangles;
     Model* obj = new Model();
-    // obj->load("../../models/spot/spot_triangulated_good.obj");
+    obj->load("../../models/spot/spot_triangulated_good.obj");
     // obj->load("../../models/rock/rock.obj");
     // obj->load("../../models/Crate/Crate1.obj");
-    obj->load("../../models/african_head/african_head.obj");
+    // obj->load("../../models/african_head/african_head.obj");
     for (int i = 0; i < obj->indices.size(); i += 3) {
         Triangle* tri = new Triangle();
         for (int j = 0; j < 3; j++) {
