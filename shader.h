@@ -21,3 +21,7 @@ struct Light
     Vector3f position;
     Vector3f intensity;
 };
+
+Vector3f default_vertex_shader(const vertex_shader_payload& payload);
+
+Vector3f default_fragment_shader(const fragment_shader_payload& payload);

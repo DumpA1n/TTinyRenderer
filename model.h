@@ -13,7 +13,9 @@ public:
     std::vector<Vector3f> vertices;   // v  顶点坐标
     std::vector<Vector3f> texCoords;  // vt 纹理坐标
     std::vector<Vector3f> normals;    // vn 法线
-    std::vector<int> indices;         // f  索引
+    std::vector<int> v_indices;       // v  索引
+    std::vector<int> vt_indices;      // vt 索引
+    std::vector<int> vn_indices;      // vn 索引
 
     void load(const std::string& filename) {
         std::ifstream file(filename);
@@ -38,6 +40,7 @@ public:
             else if (type == "vt") {
                 Vector3f vt;
                 iss >> vt.x >> vt.y;
+                vt.y = 1 - vt.y;
                 texCoords.push_back(vt);
             }
             // 法线 vn
@@ -54,7 +57,9 @@ public:
                     std::istringstream vss(vertexInfo);
                     int vIdx, vtIdx, vnIdx;
                     vss >> vIdx >> vtIdx >> vnIdx;
-                    indices.push_back(--vIdx);  // obj 索引从 1 开始
+                    v_indices.push_back(--vIdx);
+                    vt_indices.push_back(--vtIdx);
+                    vn_indices.push_back(--vnIdx);
                 }
             }
         }
