@@ -23,7 +23,7 @@ int main() {
     rst.clear_buffer();
 
     rst.set_vertex_shader((void*)&default_vertex_shader);
-    rst.set_fragment_shader((void*)&default_fragment_shader);
+    rst.set_fragment_shader((void*)&texture_fragment_shader);
     
     // rst.set_texture(new Texture("../../models/spot/spot_texture.png"));
     rst.set_texture(new Texture("../../models/african_head/african_head_diffuse.tga"));

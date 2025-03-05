@@ -48,11 +48,58 @@ Vector3f default_vertex_shader(const vertex_shader_payload& payload) {
 }
 
 Vector3f default_fragment_shader(const fragment_shader_payload& payload) {
-    Vector3f texture_color = payload.texture->get_texture_color(payload.tex_coords.x, payload.tex_coords.y);
-    // return texture_color;
+    return payload.color;
+}
+
+Vector3f texture_fragment_shader(const fragment_shader_payload& payload) {
+    Vector3f texture_color{0.0f};
+    if (payload.texture != nullptr)
+        texture_color = payload.texture->get_texture_color(payload.tex_coords.x, payload.tex_coords.y);
+
     Vector3f ka{0.005, 0.005, 0.005};
     Vector3f kd = texture_color;
-    // std::cout << payload.tex_coords.x * WIDTH << "," << payload.tex_coords.y * HEIGHT << std::endl;
+    Vector3f ks{0.7937, 0.7937, 0.7937};
+
+    Light l1{{20, 20, 20}, {500, 500, 500}};
+    Light l2{{0, 20, -20}, {500, 500, 500}};
+
+    std::vector<Light> lights = {l1, l2};
+    Vector3f amb_light_intensity{10, 10, 10};
+    Vector3f eye_pos{0, 0, 10};
+
+    float p = 150;
+
+    Vector3f color = payload.color;
+    Vector3f point = payload.view_pos;
+    Vector3f normal = payload.normal;
+
+    Vector3f result_color = {0, 0, 0};
+    
+    for (auto& light : lights)
+    {
+        Vector3f eye_dir = (eye_pos - point).normalized();
+        Vector3f light_dir = (light.position - point).normalized();
+        Vector3f normal_dir = normal;
+
+        Vector3f I = light.intensity;
+        float   r2 = (light.position - point).squaredNorm();
+        Vector3f h = (eye_dir + light_dir).normalized();
+
+        Vector3f ambient = ka.cwiseProduct(amb_light_intensity);
+
+        Vector3f diffuse = kd.cwiseProduct(I / r2) * std::max(0.0f, normal_dir.dot(light_dir));
+
+        Vector3f specular = ks.cwiseProduct(I / r2) * std::max(0.0f, std::pow(normal_dir.dot(h), p));
+
+        result_color += ambient + diffuse + specular;
+    }
+
+    return result_color;
+}
+
+Vector3f phong_fragment_shader(const fragment_shader_payload& payload) {
+    Vector3f ka{0.005, 0.005, 0.005};
+    Vector3f kd = payload.color;
     Vector3f ks{0.7937, 0.7937, 0.7937};
 
     Light l1{{20, 20, 20}, {500, 500, 500}};
