@@ -123,10 +123,10 @@ void Rasterizer::draw_triangle_filled(Triangle* t) {
                     if (b_Triangle_Barycentric_Interpolation) {
                         Vector3f interpolated_color = interpolate(alpha, beta, gamma, t->color[0], t->color[1], t->color[2], 1);
                         Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals[0], t->normals[1], t->normals[2], 1);
-                        Vector3f interpolated_texcoords = interpolate(alpha, beta, gamma, t->texCoords[0], t->texCoords[1], t->texCoords[2], 1);
+                        Vector3f interpolated_texcoords = interpolate(alpha, beta, gamma, t->tex_coords[0], t->tex_coords[1], t->tex_coords[2], 1);
                         set_pixel(thizp, fragment_shader({interpolated_color, interpolated_normal, interpolated_texcoords, texture}));
                     } else {
-                        set_pixel(thizp, fragment_shader({t->color[0], (t->normals[0]+t->normals[1]+t->normals[2])/3.0f, t->texCoords[0], texture}));
+                        set_pixel(thizp, fragment_shader({t->color[0], (t->normals[0]+t->normals[1]+t->normals[2])/3.0f, t->tex_coords[0], texture}));
                     }
                     depth_buffer[thizp.y * width + thizp.x] = zp;
                 }

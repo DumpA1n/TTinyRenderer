@@ -2,21 +2,17 @@
 
 #include "rasterizer.h"
 #include "model.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#include <math.h>
-#include <chrono>
-
-#define WIDTH 700
-#define HEIGHT 700
-
-long long get_time() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-}
+int WIDTH = 700;
+int HEIGHT = 700;
 
 int main() {
     Rasterizer rst(WIDTH, HEIGHT);
@@ -27,6 +23,8 @@ int main() {
     
     // rst.set_texture(new Texture("../../models/spot/spot_texture.png"));
     rst.set_texture(new Texture("../../models/african_head/african_head_diffuse.tga"));
+    // rst.set_texture(new Texture("../../models/african_head/african_head_spec.tga"));
+    // rst.set_texture(new Texture("../../models/african_head/african_head_nm.tga"));
 
     std::vector<Triangle*> triangles;
     Model* obj = new Model();
@@ -36,7 +34,7 @@ int main() {
         Triangle* tri = new Triangle();
         for (int j = 0; j < 3; j++) {
             tri->vertices[j] = obj->vertices[obj->v_indices[i + j]];
-            tri->texCoords[j] = obj->texCoords[obj->vt_indices[i + j]];
+            tri->tex_coords[j] = obj->tex_coords[obj->vt_indices[i + j]];
             tri->normals[j] = obj->normals[obj->vn_indices[i + j]];
         }
         triangles.push_back(tri);

@@ -55,6 +55,13 @@ Vector3f texture_fragment_shader(const fragment_shader_payload& payload) {
     Vector3f texture_color{0.0f};
     if (payload.texture != nullptr)
         texture_color = payload.texture->get_texture_color(payload.tex_coords.x, payload.tex_coords.y);
+    return texture_color;
+}
+
+Vector3f phong_texture_fragment_shader(const fragment_shader_payload& payload) {
+    Vector3f texture_color{0.0f};
+    if (payload.texture != nullptr)
+        texture_color = payload.texture->get_texture_color(payload.tex_coords.x, payload.tex_coords.y);
 
     Vector3f ka{0.005, 0.005, 0.005};
     Vector3f kd = texture_color;

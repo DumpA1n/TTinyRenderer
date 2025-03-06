@@ -11,7 +11,7 @@
 class Model {
 public:
     std::vector<Vector3f> vertices;   // v  顶点坐标
-    std::vector<Vector3f> texCoords;  // vt 纹理坐标
+    std::vector<Vector3f> tex_coords;  // vt 纹理坐标
     std::vector<Vector3f> normals;    // vn 法线
     std::vector<int> v_indices;       // v  索引
     std::vector<int> vt_indices;      // vt 索引
@@ -41,7 +41,7 @@ public:
                 Vector3f vt;
                 iss >> vt.x >> vt.y;
                 vt.y = 1 - vt.y;
-                texCoords.push_back(vt);
+                tex_coords.push_back(vt);
             }
             // 法线 vn
             else if (type == "vn") {
