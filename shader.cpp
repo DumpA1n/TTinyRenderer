@@ -1,7 +1,8 @@
 #include "shader.h"
+#include "math.h"
 
-constexpr float PI = 3.14159265358979323846f;
-float degrees_to_radians(float degree) {
+#define PI 3.14159265358979323846f
+inline float degrees_to_radians(float degree) {
     return degree * (PI / 180.0f);
 }
 
@@ -20,42 +21,7 @@ Matrix4f get_model_matrix(const Vector3f& scale, const Vector3f& rotate, const V
     };
 }
 
-Matrix4f get_model_matrix(float angle) {
-    angle = degrees_to_radians(angle);
-    Matrix4f rotation{
-        cos(angle), 0, sin(angle), 0,
-        0, 1, 0, 0,
-        -sin(angle), 0, cos(angle), 0,
-        0, 0, 0, 1
-    };
-    Matrix4f scale{
-        2.5, 0, 0, 0,
-          0, 2.5, 0, 0,
-          0, 0, 2.5, 0,
-          0, 0, 0, 1
-    };
-    Matrix4f translate{
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    };
-    return translate * rotation * scale;
-}
-
-Matrix4f get_view_matrix(const Vector3f& eye_pos)
-{
-    Matrix4f view = Matrix4f::identity();
-    Matrix4f translate{
-        1, 0, 0, -eye_pos.x,
-        0, 1, 0, -eye_pos.y,
-        0, 0, 1, -eye_pos.z,
-        0, 0, 0, 1
-    };
-    return translate * view;
-}
-
-Matrix4f LookAt(const Vector3f& eye_pos) {
+Matrix4f get_view_matrix(const Vector3f& eye_pos) {
     Vector3f up(0, 1, 0);
     Vector3f target(0, 0, 0);
     Vector3f z_axis = (eye_pos - target).normalized();
@@ -70,24 +36,6 @@ Matrix4f LookAt(const Vector3f& eye_pos) {
     };
 }
 
-Matrix4f get_orthographic_matrix(float fov, float a, float n, float f) {
-    return Matrix4f{
-        1/(n*tan(fov/2)*a), 0               , 0      , 0,
-        0                 , 1/(n*tan(fov/2)), 0      , 0,
-        0                 , 0               , 2/(n-f), -(n+f)/(n-f),
-        0                 , 0               , 0      , 1
-    };
-}
-
-Matrix4f get_perspective_matrix(float n, float f) {
-    return Matrix4f{
-        n, 0, 0, 0,
-        0, n, 0, 0,
-        0, 0, n+f, -n*f,
-        0, 0, 1, 0
-    };
-}
-
 Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar) {
     eye_fov = degrees_to_radians(eye_fov);
     return Matrix4f{
@@ -96,25 +44,23 @@ Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, f
         0                              , 0               , (zNear+zFar)/(zNear-zFar), (2*zNear*zFar)/(zNear-zFar),
         0                              , 0               , -1                        , 0, 
     };
-    // return get_orthographic_matrix(eye_fov, aspect_ratio, zNear, zFar) * get_perspective_matrix(zNear, zFar);
 }
 
 Vector4f default_vertex_shader(const vertex_shader_payload& payload) {
-    Vector3f angle{-10.0f, 140.0f, 0.0f};
-    Vector3f eye_pos{0.0f, 0.0f, 5.0f};
+    Vector3f angle{0.0f, 140.0f, 0.0f};
+    Vector3f eye_pos{0.0f, 0.0f, 10.0f};
 
-    Matrix4f model = get_model_matrix({1.0f}, angle, {0.0f, 0.0f, 0.0f});
-    Matrix4f view = LookAt(eye_pos);
+    Matrix4f model = get_model_matrix({2.5f}, angle, {0.0f, 0.0f, 0.0f});
+    Matrix4f view = get_view_matrix(eye_pos);
     Matrix4f projection = get_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f);
     Matrix4f mvp = projection * view * model;
     Matrix4f viewmodel = view * model;
 
-    payload.view_pos = (viewmodel * payload.position).xyz().normalized();
-    
-    payload.normal = (viewmodel.inverse().transpose() * (mvp * Vector4f{payload.normal, 0.0f})).xyz().normalized();
+    payload.view_pos = (viewmodel * payload.position).xyz();
+
+    payload.normal = (viewmodel.inverse().transpose() * Vector4f{payload.normal, 0.0f}).xyz();
 
     payload.position = mvp * payload.position;
-    //Homogeneous division
     payload.position.x /= payload.position.w;
     payload.position.y /= payload.position.w;
     payload.position.z /= payload.position.w;
@@ -132,7 +78,7 @@ Vector3f texture_fragment_shader(const fragment_shader_payload& payload) {
         texture_color = payload.texture->get_texture_color(payload.tex_coords.x, payload.tex_coords.y);
     return texture_color;
 }
-
+#include <iostream>
 Vector3f phong_texture_fragment_shader(const fragment_shader_payload& payload) {
     Vector3f texture_color{0.0f};
     if (payload.texture != nullptr)
@@ -144,7 +90,6 @@ Vector3f phong_texture_fragment_shader(const fragment_shader_payload& payload) {
 
     Light l1{{20, 20, 20}, {500, 500, 500}};
     Light l2{{-20, 20, 0}, {500, 500, 500}};
-    // Light l2{{0, 20, -20}, {500, 500, 500}};
 
     std::vector<Light> lights = {l1, l2};
     Vector3f amb_light_intensity{10, 10, 10};
@@ -162,7 +107,7 @@ Vector3f phong_texture_fragment_shader(const fragment_shader_payload& payload) {
     {
         Vector3f eye_dir = (eye_pos - point).normalized();
         Vector3f light_dir = (light.position - point).normalized();
-        Vector3f normal_dir = normal;
+        Vector3f normal_dir = normal.normalized();
 
         Vector3f I = light.intensity;
         float   r2 = (light.position - point).squaredNorm();
@@ -177,6 +122,12 @@ Vector3f phong_texture_fragment_shader(const fragment_shader_payload& payload) {
         result_color += ambient + diffuse + specular;
     }
 
+    result_color = {
+        result_color.x > 1.0f ? 1.0f : result_color.x,
+        result_color.y > 1.0f ? 1.0f : result_color.y,
+        result_color.z > 1.0f ? 1.0f : result_color.z
+    };
+
     return result_color;
 }
 
@@ -186,7 +137,7 @@ Vector3f phong_fragment_shader(const fragment_shader_payload& payload) {
     Vector3f ks{0.7937, 0.7937, 0.7937};
 
     Light l1{{20, 20, 20}, {500, 500, 500}};
-    Light l2{{0, 20, -20}, {500, 500, 500}};
+    Light l2{{-20, 20, 0}, {500, 500, 500}};
 
     std::vector<Light> lights = {l1, l2};
     Vector3f amb_light_intensity{10, 10, 10};

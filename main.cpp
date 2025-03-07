@@ -62,7 +62,7 @@ int main() {
     rst.draw_line(zero.xy(), yAxis.xy(), {0, 1, 0});
     rst.draw_line(zero.xy(), zAxis.xy(), {0, 0, 1});
 
-    Vector4f l1 = rst.vertex_shader({Vector4f{-20, -20, -20, 1}, Vector3f{}, Vector3f{}});
+    Vector4f l1 = rst.vertex_shader({Vector4f{20, 20, 20, 1}, Vector3f{}, Vector3f{}});
     Vector4f l2 = rst.vertex_shader({Vector4f{-20, 20, 0, 1}, Vector3f{}, Vector3f{}});
     ViewPort(l1, WIDTH, HEIGHT);
     ViewPort(l2, WIDTH, HEIGHT);

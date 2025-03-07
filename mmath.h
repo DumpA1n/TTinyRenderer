@@ -17,7 +17,7 @@ struct Vector2f {
     Vector2f() : x(0), y(0) {}
     Vector2f(float v) : x(v), y(v) {}
     Vector2f(float _x, float _y) : x(_x), y(_y) {}
-    Vector2f uv() { return {x, y}; }
+    Vector2f uv() const { return {x, y}; }
 };
 
 struct Vector3f {
@@ -28,7 +28,7 @@ struct Vector3f {
     Vector3f(float _x, float _y, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
     Vector3f operator+(const Vector3f& o) const { return Vector3f{x + o.x, y + o.y, z + o.z}; }
     Vector3f operator-(const Vector3f& o) const { return Vector3f{x - o.x, y - o.y, z - o.z}; }
-    Vector3f operator*(const Vector3f& o) const { return Vector3f{x * o.x, y * o.y, z * o.z}; }
+    Vector3f operator*(float value) const { return Vector3f{x * value, y * value, z * value}; }
     Vector3f operator/(float value) const { return {x / value, y / value, z / value}; }
     Vector3f& operator+=(const Vector3f& o) { x += o.x; y += o.y; z += o.z; return *this; }
     inline float norm() const { return std::sqrt(x*x + y*y + z*z); }
@@ -37,7 +37,7 @@ struct Vector3f {
     inline Vector3f cwiseProduct(const Vector3f& o) const { return {x*o.x, y*o.y, z*o.z}; }
     inline float dot(const Vector3f& o) const { return x * o.x + y * o.y + z * o.z; }
     inline Vector3f cross(const Vector3f& o) const { return {y*o.z - z*o.y, z*o.x - x*o.z, x*o.y - y*o.x}; }
-    Vector2f xy() { return {x, y}; }
+    Vector2f xy() const { return {x, y}; }
 };
 
 struct Vector4f {
@@ -47,8 +47,8 @@ struct Vector4f {
     Vector4f(float _x, float _y, float _z, float _w = 0.0f) : x(_x), y(_y), z(_z), w(_w) {}
     Vector4f(int _x, int _y, int _z) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)), w(0) {}
     Vector4f(const Vector3f o, float _w) : x(o.x), y(o.y), z(o.z), w(_w) {}
-    Vector2f xy() { return {x, y}; }
-    Vector3f xyz() { return {x, y, z}; }
+    Vector2f xy() const { return {x, y}; }
+    Vector3f xyz() const { return {x, y, z}; }
 };
 
 struct Vector3c {

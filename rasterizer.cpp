@@ -150,7 +150,7 @@ void Rasterizer::draw_triangle_filled(Triangle* t, Vector3f* view_pos) {
                         Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals[0], t->normals[1], t->normals[2], 1);
                         Vector2f interpolated_texcoords = interpolate(alpha, beta, gamma, t->tex_coords[0], t->tex_coords[1], t->tex_coords[2], 1);
                         Vector3f interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos[0], view_pos[1], view_pos[2], 1);
-                        fragment_shader_payload payload({interpolated_color, interpolated_normal, interpolated_texcoords, texture});
+                        fragment_shader_payload payload({interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture});
                         payload.view_pos = interpolated_shadingcoords;
                         set_pixel(x, y, fragment_shader(payload));
                     } else {
@@ -166,125 +166,20 @@ void Rasterizer::draw_triangle_filled(Triangle* t, Vector3f* view_pos) {
 }
 
 void Rasterizer::draw(std::vector<Triangle*> triangels) {
-    float f1 = (50 - 0.1) / 2.0;
-    float f2 = (50 + 0.1) / 2.0;
-
-    constexpr float PI = 3.14159265358979323846f;
-    static auto degrees_to_radians = [&](float degree) {
-        return degree * (PI / 180.0f);
+    static auto ViewPort = [](Vector4f& p, int w, int h) -> void {
+        float f1 = (50 - 0.1) / 2.0;
+        float f2 = (50 + 0.1) / 2.0;
+        p.x = w*0.5f*(p.x+1.0f);
+        p.y = h*(1.0f - 0.5f*(p.y+1.0f));
+        p.z = p.z * f1 + f2;
     };
-
-    static auto get_model_matrix = [&](const Vector3f& scale, const Vector3f& rotate, const Vector3f& translate) {
-        float rx = degrees_to_radians(rotate.x);
-        float ry = degrees_to_radians(rotate.y);
-        float rz = degrees_to_radians(rotate.z);
-        float cx = cos(rx), sx = sin(rx);
-        float cy = cos(ry), sy = sin(ry);
-        float cz = cos(rz), sz = sin(rz);
-        return Matrix4f{
-            scale.x * (cy * cz), scale.x * (cz * sx * sy - cx * sz), scale.x * (cx * cz * sy + sx * sz), translate.x,
-            scale.y * (cy * sz), scale.y * (cx * cz + sx * sy * sz), scale.y * (cx * sy * sz - cz * sx), translate.y,
-            scale.z * (-sy)    , scale.z * (cy * sx)               , scale.z * (cx * cy)               , translate.z,
-            0.0f               , 0.0f                              , 0.0f                              , 1.0f
-        };
-    };
-
-    static auto get_view_matrix = [&](const Vector3f& eye_pos) {
-        Matrix4f view = Matrix4f::identity();
-        Matrix4f translate{
-            1, 0, 0, -eye_pos.x,
-            0, 1, 0, -eye_pos.y,
-            0, 0, 1, -eye_pos.z,
-            0, 0, 0, 1
-        };
-        return translate * view;
-    };
-
-    static auto get_projection_matrix = [&](float eye_fov, float aspect_ratio, float zNear, float zFar) {
-        eye_fov = degrees_to_radians(eye_fov);
-        return Matrix4f{
-            1/(tan(eye_fov/2)*aspect_ratio), 0               , 0                        , 0,
-            0                              , 1/tan(eye_fov/2), 0                        , 0,
-            0                              , 0               , (zFar+zNear)/(zFar-zNear), (2*zFar*zNear)/(zFar-zNear),
-            0                              , 0               , -1                       , 0, 
-        };
-    };
-
-    Vector3f angle{-10.0f, 20.0f, 0.0f};
-    Vector3f eye_pos{0.0f, 0.0f, 5.0f};
-    Matrix4f model = get_model_matrix({1.0f}, angle, {0.0f, 0.0f, 0.0f});
-    Matrix4f view = get_view_matrix(eye_pos);
-    Matrix4f projection = get_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f);
-    Matrix4f mvp = projection * view * model;
 
     for (auto& t : triangels) {
-        // Triangle newTri = *t;
-
-        // std::array<Vector4f, 3> mm {
-        //         (view * model * t->vertices[0]),
-        //         (view * model * t->vertices[1]),
-        //         (view * model * t->vertices[2])
-        // };
-
-        // Vector3f view_pos[3];
-        // for (int i = 0; i < 3; i++)
-        //     view_pos[i] = mm[i].xyz();
-
-        // Vector4f v[] = {
-        //         mvp * t->vertices[0],
-        //         mvp * t->vertices[1],
-        //         mvp * t->vertices[2]
-        // };
-        // //Homogeneous division
-        // for (int i = 0; i < 3; i++) {
-        //     v[i].x /= v[i].w;
-        //     v[i].y /= v[i].w;
-        //     v[i].z /= v[i].w;
-        // }
-
-        // Matrix4f inv_trans = (view * model).inverse().transpose();
-        // Vector4f n[] = {
-        //         inv_trans * Vector4f(t->normals[0], 0.0f),
-        //         inv_trans * Vector4f(t->normals[1], 0.0f),
-        //         inv_trans * Vector4f(t->normals[2], 0.0f)
-        // };
-
-        // //Viewport transformation
-        // for (int i = 0; i < 3; i++)
-        // {
-        //     v[i].x = 0.5*width*(v[i].x+1.0);
-        //     v[i].y = 0.5*height*(v[i].y+1.0);
-        //     v[i].z = v[i].z * f1 + f2;
-        // }
-
-        // for (int i = 0; i < 3; ++i)
-        // {
-        //     //screen space coordinates
-        //     newTri.setVertices(i, v[i]);
-        // }
-
-        // for (int i = 0; i < 3; ++i)
-        // {
-        //     //view space normal
-        //     newTri.setNormals(i, n[i].xyz().normalized());
-        // }
-
-
-
-
         Triangle newTri = *t;
         Vector3f view_pos[3];
     
         for (int i = 0; i < 3; i++)
             vertex_shader({newTri.vertices[i], newTri.normals[i], view_pos[i]});
-
-        static auto ViewPort = [](Vector4f& p, int w, int h) -> void {
-            float f1 = (50 - 0.1) / 2.0;
-            float f2 = (50 + 0.1) / 2.0;
-            p.x = w*0.5f*(p.x+1.0f);
-            p.y = h*(1.0f - 0.5f*(p.y+1.0f));
-            p.z = p.z * f1 + f2;
-        };
 
         for (int i = 0; i < 3; i++)
             ViewPort(newTri.vertices[i], width, height);
