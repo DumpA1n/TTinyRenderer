@@ -5,6 +5,8 @@
 #include "triangle.h"
 
 #include <vector>
+#include <string>
+#include <unordered_map>
 
 class Rasterizer {
 public:
@@ -29,13 +31,15 @@ public:
     void set_vertex_shader(void* fn);
     void set_fragment_shader(void* fn);
 
-    Texture* texture;
+    Texture* texture = nullptr;
     void set_texture(Texture* tex);
+    std::unordered_map<std::string, Texture*> textureMap;
+    void add_texture(std::string name, Texture* texture);
 
     void draw_line(const Vector2f& p1, const Vector2f& p2, const Vector3f& col);
     void draw_triangle(const std::vector<Vector2f>& ps, const Vector3f& col);
     void draw_triangle_fill(const std::vector<Vector3f>& ps, const Vector3f& col);
-    void draw_triangle_filled(Triangle* t, Vector3f* view_pos);
+    void rasterize(Triangle* t, Vector3f* view_pos);
 
     void draw(std::vector<Triangle*> triangels);
 };

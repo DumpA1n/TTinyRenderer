@@ -62,6 +62,9 @@ void Rasterizer::set_fragment_shader(void* fn) {
 void Rasterizer::set_texture(Texture* tex) {
     texture = tex;
 }
+void Rasterizer::add_texture(std::string name, Texture* texture) {
+    textureMap.emplace(name, texture);
+}
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector4f* v){
     float c1 = (x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*y + v[1].x*v[2].y - v[2].x*v[1].y) / (v[0].x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*v[0].y + v[1].x*v[2].y - v[2].x*v[1].y);
@@ -120,7 +123,7 @@ void Rasterizer::draw_triangle_fill(const std::vector<Vector3f>& ps, const Vecto
         }
     }
 }
-void Rasterizer::draw_triangle_filled(Triangle* t, Vector3f* view_pos) {
+void Rasterizer::rasterize(Triangle* t, Vector3f* view_pos) {
     auto v = t->toVector4f();
 
     //bbox
@@ -150,11 +153,11 @@ void Rasterizer::draw_triangle_filled(Triangle* t, Vector3f* view_pos) {
                         Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals[0], t->normals[1], t->normals[2], 1);
                         Vector2f interpolated_texcoords = interpolate(alpha, beta, gamma, t->tex_coords[0], t->tex_coords[1], t->tex_coords[2], 1);
                         Vector3f interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos[0], view_pos[1], view_pos[2], 1);
-                        fragment_shader_payload payload({interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture});
+                        fragment_shader_payload payload({interpolated_color, interpolated_normal, interpolated_texcoords, texture, textureMap});
                         payload.view_pos = interpolated_shadingcoords;
                         set_pixel(x, y, fragment_shader(payload));
                     } else {
-                        set_pixel(x, y, fragment_shader({t->color[0], (t->normals[0]+t->normals[1]+t->normals[2])/3.0f, t->tex_coords[0], texture}));
+                        // set_pixel(x, y, fragment_shader({t->color[0], (t->normals[0]+t->normals[1]+t->normals[2])/3.0f, t->tex_coords[0], texture}));
                     }
                     depth_buffer[y * width + x] = zp;
                 } else {
@@ -174,6 +177,7 @@ void Rasterizer::draw(std::vector<Triangle*> triangels) {
         p.z = p.z * f1 + f2;
     };
 
+    angleY = ((int)angleY + 10) % 360;
     for (auto& t : triangels) {
         Triangle newTri = *t;
         Vector3f view_pos[3];
@@ -184,6 +188,6 @@ void Rasterizer::draw(std::vector<Triangle*> triangels) {
         for (int i = 0; i < 3; i++)
             ViewPort(newTri.vertices[i], width, height);
 
-        draw_triangle_filled(&newTri, view_pos);
+        rasterize(&newTri, view_pos);
     }
 }

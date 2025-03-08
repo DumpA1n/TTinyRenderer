@@ -29,6 +29,7 @@ struct Vector3f {
     Vector3f operator+(const Vector3f& o) const { return Vector3f{x + o.x, y + o.y, z + o.z}; }
     Vector3f operator-(const Vector3f& o) const { return Vector3f{x - o.x, y - o.y, z - o.z}; }
     Vector3f operator*(float value) const { return Vector3f{x * value, y * value, z * value}; }
+    // Vector3f operator*(float value, const Vector3f& v) { return Vector3f{v.x * value, v.y * value, v.z * value}; }
     Vector3f operator/(float value) const { return {x / value, y / value, z / value}; }
     Vector3f& operator+=(const Vector3f& o) { x += o.x; y += o.y; z += o.z; return *this; }
     inline float norm() const { return std::sqrt(x*x + y*y + z*z); }
@@ -56,6 +57,49 @@ struct Vector3c {
     Vector3c() : x(0), y(0), z(0) {}
     Vector3c(uint8_t v) : x(v), y(v), z(v) {}
     Vector3c(uint8_t _x, uint8_t _y, uint8_t _z = 0) : x(_x), y(_y), z(_z) {}
+};
+
+struct Matrix3f {
+    std::array<std::array<float, 3>, 3> m;
+    Matrix3f() { memset(m.data(), 0, sizeof(m)); }
+    Matrix3f(float m00, float m01, float m02,
+             float m10, float m11, float m12,
+             float m20, float m21, float m22) {
+        m = {{{m00, m01, m02}, 
+              {m10, m11, m12}, 
+              {m20, m21, m22}}};
+    }
+    Matrix3f(const Vector3f& row0, const Vector3f& row1, const Vector3f& row2) {
+        m = {{{row0.x, row0.y, row0.z},
+              {row1.x, row1.y, row1.z},
+              {row2.x, row2.y, row2.z}}};
+    }
+    static Matrix3f identity() {
+        Matrix3f im;
+        memset(im.m.data(), 0, sizeof(im.m));
+        for (int i = 0; i < 3; i++) {
+            im.m[i][i] = 1.0f;
+        }
+        return im;
+    }
+    Matrix3f operator*(const Matrix3f& other) {
+        Matrix3f result;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                result.m[i][j] = 0;
+                for (int k = 0; k < 3; k++) {
+                    result.m[i][j] += m[i][k] * other.m[k][j];
+                }
+            }
+        }
+        return result;
+    }
+    Vector3f operator*(const Vector3f& v) const {
+        float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
+        float y_new = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
+        float z_new = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z;
+        return Vector3f(x_new, y_new, z_new);
+    }
 };
 
 struct Matrix4f {
@@ -97,9 +141,9 @@ struct Matrix4f {
         return result;
     }
     Vector3f operator*(const Vector3f& v) const {
-        float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * 0.0f;
-        float y_new = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * 0.0f;
-        float z_new = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * 0.0f;
+        float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
+        float y_new = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
+        float z_new = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z;
         return Vector3f(x_new, y_new, z_new);
     }
     Vector4f operator*(const Vector4f& v) const {

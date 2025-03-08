@@ -7,11 +7,12 @@
 
 class Texture {
 private:
-    int width, height, channels;
-
     unsigned char* image;
 
 public:
+    int width, height, channels;
+
     Texture(const std::string& filename);
-    Vector3f get_texture_color(float u, float v);
+    Vector3f sampler2D(float u, float v);
+    Vector3f Texture::sampler2D(Vector2f uv);
 };
