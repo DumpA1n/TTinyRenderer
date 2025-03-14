@@ -14,5 +14,5 @@ public:
 
     Texture(const std::string& filename);
     Vector3f sampler2D(float u, float v);
-    Vector3f Texture::sampler2D(Vector2f uv);
+    Vector3f sampler2D(Vector2f uv);
 };

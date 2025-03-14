@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 extern float angleY;
+
 struct vertex_shader_payload {
     Vector4f& position;
     Vector3f& normal;
@@ -18,8 +19,8 @@ struct fragment_shader_payload {
     Vector3f normal;
     Vector2f tex_coords;
     Texture* texture;
-    std::unordered_map<std::string, Texture*> textureMap;
-    fragment_shader_payload(const Vector3f& col, const Vector3f& nor, const Vector2f& tc, Texture* tex, const std::unordered_map<std::string, Texture*>& texMap) :
+    std::unordered_map<std::string, Texture*> *textureMap;
+    fragment_shader_payload(const Vector3f& col, const Vector3f& nor, const Vector2f& tc, Texture* tex, decltype(textureMap) texMap) :
          color(col), normal(nor), tex_coords(tc), texture(tex), textureMap(texMap) {}
 };
 

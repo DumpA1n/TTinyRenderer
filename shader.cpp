@@ -82,21 +82,18 @@ Vector3f texture_fragment_shader(const fragment_shader_payload& payload) {
 }
 
 Vector3f african_head_fragment_shader(const fragment_shader_payload& payload) {
-    const std::unordered_map<std::string, Texture*>& textures = payload.textureMap;
-    
-    Texture* tex_texture  = textures.count("texture")  ? textures.at("texture")  : nullptr;
-    Texture* tex_specular = textures.count("specular") ? textures.at("specular") : nullptr;
-    Texture* tex_diffuse  = textures.count("diffuse")  ? textures.at("diffuse")  : nullptr;
-    Texture* tex_normal   = textures.count("normal")   ? textures.at("normal")   : nullptr;
-    if (tex_normal == nullptr) {
-        std::cerr << "texture normal not loaded!!!" << std::endl;
-        return {0.0f};
-    }
+    auto textures = payload.textureMap;
+    if (textures == nullptr) return {0.0f};
 
-    static auto sample_or_default = [](Texture* tex, Vector2f coords) {
+    Texture* tex_texture  = textures->count("texture")  ? textures->at("texture")  : nullptr;
+    Texture* tex_specular = textures->count("specular") ? textures->at("specular") : nullptr;
+    Texture* tex_diffuse  = textures->count("diffuse")  ? textures->at("diffuse")  : nullptr;
+    Texture* tex_normal   = textures->count("normal")   ? textures->at("normal")   : nullptr;
+
+    static auto sample_or_default = [](Texture* tex, const Vector2f& coords) {
         return tex ? tex->sampler2D(coords) : Vector3f{0.0f};
     };
-    
+
     Vector3f texture  = sample_or_default(tex_texture, payload.tex_coords);
     Vector3f specular = sample_or_default(tex_specular, payload.tex_coords);
     Vector3f diffuse  = sample_or_default(tex_diffuse, payload.tex_coords);
@@ -246,191 +243,3 @@ Vector3f phong_fragment_shader(const fragment_shader_payload& payload) {
 
     return result_color;
 }
-
-
-
-
-
-
-
-
-
-
-
-// Vector3f african_head_fragment_shader(const fragment_shader_payload& payload) {
-//     const std::unordered_map<std::string, Texture*>& textures = payload.textureMap;
-    
-//     Texture* tex_texture  = textures.count("texture")  ? textures.at("texture")  : nullptr;
-//     Texture* tex_specular = textures.count("specular") ? textures.at("specular") : nullptr;
-//     Texture* tex_diffuse  = textures.count("diffuse")  ? textures.at("diffuse")  : nullptr;
-//     Texture* tex_normal   = textures.count("normal")   ? textures.at("normal")   : nullptr;
-//     if (tex_normal == nullptr) {
-//         std::cerr << "texture normal not loaded!!!" << std::endl;
-//         return {0.0f};
-//     }
-
-//     static auto sample_or_default = [](Texture* tex, Vector2f coords) {
-//         return tex ? tex->sampler2D(coords) : Vector3f{0.0f};
-//     };
-    
-//     Vector3f texture  = sample_or_default(tex_texture, payload.tex_coords);
-//     Vector3f specular = sample_or_default(tex_specular, payload.tex_coords);
-//     Vector3f diffuse  = sample_or_default(tex_diffuse, payload.tex_coords);
-//     Vector3f nm       = sample_or_default(tex_normal, payload.tex_coords);
-
-//     Vector3f ka{0.005, 0.005, 0.005};
-//     Vector3f kd = diffuse;
-//     Vector3f ks = specular;
-
-//     Light l1{{20, 20, 20}, {500, 500, 500}};
-//     Light l2{{-20, 20, 0}, {500, 500, 500}};
-
-//     std::vector<Light> lights = {l1, l2};
-//     Vector3f amb_light_intensity{10, 10, 10};
-//     Vector3f eye_pos{0, 0, 10};
-
-//     float p = 150;
-
-//     Vector3f color = payload.color;
-//     Vector3f point = payload.view_pos;
-//     Vector3f normal = payload.normal;
-
-//     float kh = 0.2, kn = 5;
-//     auto n = nm;
-//     auto x = n.x, y = n.y, z = n.z;
-//     auto u = payload.tex_coords.x;
-//     auto v = payload.tex_coords.y;
-//     float w = (float)tex_normal->width;
-//     float h = (float)tex_normal->height;
-//     Vector3f t(x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z));
-//     Vector3f b = n.cross(t);
-//     Matrix3f TBN{ t, b, n };
-//     auto dU = kh * kn * (tex_normal->sampler2D(u+1/w,v).norm()-tex_normal->sampler2D(u,v).norm());
-//     auto dV = kh * kn * (tex_normal->sampler2D(u,v+1/h).norm()-tex_normal->sampler2D(u,v).norm());
-//     Vector3f ln(-dU, -dV, 1);
-
-//     // bump mapping
-//     normal = (TBN * ln).normalized();
-    
-//     // displacement mapping
-//     point += n * kn * tex_normal->sampler2D(u,v).norm();
-
-//     Vector3f result_color = {0, 0, 0};
-    
-//     for (auto& light : lights)
-//     {
-//         Vector3f eye_dir = (eye_pos - point).normalized();
-//         Vector3f light_dir = (light.position - point).normalized();
-//         Vector3f normal_dir = normal.normalized();
-
-//         Vector3f I = light.intensity;
-//         float   r2 = (light.position - point).squaredNorm();
-//         Vector3f h = (eye_dir + light_dir).normalized();
-
-//         Vector3f ambient = ka.cwiseProduct(amb_light_intensity);
-
-//         Vector3f diffuse = kd.cwiseProduct(I / r2) * std::max(0.0f, normal_dir.dot(light_dir));
-
-//         Vector3f specular = ks.cwiseProduct(I / r2) * std::max(0.0f, std::pow(normal_dir.dot(h), p));
-
-//         result_color += diffuse + specular;
-//     }
-
-//     result_color = {
-//         result_color.x > 1.0f ? 1.0f : result_color.x,
-//         result_color.y > 1.0f ? 1.0f : result_color.y,
-//         result_color.z > 1.0f ? 1.0f : result_color.z
-//     };
-
-//     return result_color;
-// }
-
-
-// Vector3f african_head_fragment_shader(const fragment_shader_payload& payload) {
-//     const std::unordered_map<std::string, Texture*>& textures = payload.textureMap;
-    
-//     Texture* tex_texture  = textures.count("texture")  ? textures.at("texture")  : nullptr;
-//     Texture* tex_specular = textures.count("specular") ? textures.at("specular") : nullptr;
-//     Texture* tex_diffuse  = textures.count("diffuse")  ? textures.at("diffuse")  : nullptr;
-//     Texture* tex_normal   = textures.count("normal")   ? textures.at("normal")   : nullptr;
-//     if (tex_normal == nullptr) {
-//         std::cerr << "texture normal not loaded!!!" << std::endl;
-//         return {0.0f};
-//     }
-
-//     static auto sample_or_default = [](Texture* tex, Vector2f coords) {
-//         return tex ? tex->sampler2D(coords) : Vector3f{0.0f};
-//     };
-    
-//     Vector3f texture  = sample_or_default(tex_texture, payload.tex_coords);
-//     Vector3f specular = sample_or_default(tex_specular, payload.tex_coords);
-//     Vector3f diffuse  = sample_or_default(tex_diffuse, payload.tex_coords);
-//     Vector3f nm       = sample_or_default(tex_normal, payload.tex_coords);
-
-//     Vector3f ka{0.005, 0.005, 0.005};
-//     Vector3f kd = diffuse;
-//     Vector3f ks = specular;
-
-//     Light l1{{20, 20, 20}, {500, 500, 500}};
-//     Light l2{{-20, 20, 0}, {500, 500, 500}};
-
-//     std::vector<Light> lights = {l1};
-//     Vector3f amb_light_intensity{10, 10, 10};
-//     Vector3f eye_pos{0, 0, 3};
-
-//     float p = 150;
-
-//     Vector3f color = payload.color;
-//     Vector3f point = payload.view_pos;
-//     Vector3f normal = payload.normal;
-
-//     float kh = 0.2, kn = 0.1;
-//     auto n = normal;
-//     auto x = n.x, y = n.y, z = n.z;
-//     Vector3f t(x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z));
-//     Vector3f b = n.cross(t);
-//     Matrix3f TBN{ t, b, n };
-
-//     auto u = payload.tex_coords.x;
-//     auto v = payload.tex_coords.y;
-//     float w = (float)tex_normal->width;
-//     float h = (float)tex_normal->height;
-//     auto dU = kh * kn * (tex_normal->sampler2D(u+1/w,v).norm()-tex_normal->sampler2D(u,v).norm());
-//     auto dV = kh * kn * (tex_normal->sampler2D(u,v+1/h).norm()-tex_normal->sampler2D(u,v).norm());
-//     Vector3f ln(-dU, -dV, 1);
-
-//     // bump mapping
-//     normal = (TBN * nm).normalized() * 2.0f;
-    
-//     // displacement mapping
-//     point += tex_normal->sampler2D(u,v) * 2.0f;
-
-//     Vector3f result_color = {0, 0, 0};
-    
-//     for (auto& light : lights)
-//     {
-//         Vector3f eye_dir = (eye_pos - point).normalized();
-//         Vector3f light_dir = (light.position - point).normalized();
-//         Vector3f normal_dir = normal.normalized();
-
-//         Vector3f I = light.intensity;
-//         float   r2 = (light.position - point).squaredNorm();
-//         Vector3f h = (eye_dir + light_dir).normalized();
-
-//         Vector3f ambient = ka.cwiseProduct(amb_light_intensity);
-
-//         Vector3f diffuse = kd * std::max(0.0f, normal_dir.dot(light_dir));
-
-//         Vector3f specular = ks * std::max(0.0f, std::pow(normal_dir.dot(h), p));
-
-//         result_color += diffuse + specular;
-//     }
-
-//     result_color = {
-//         result_color.x > 1.0f ? 1.0f : result_color.x,
-//         result_color.y > 1.0f ? 1.0f : result_color.y,
-//         result_color.z > 1.0f ? 1.0f : result_color.z
-//     };
-
-//     return result_color;
-// }

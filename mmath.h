@@ -4,6 +4,7 @@
 #include <cstring>
 #include <array>
 #include <stdexcept>
+#include <iostream>
 
 struct Vector2i {
     int x, y;
@@ -26,10 +27,10 @@ struct Vector3f {
     Vector3f(float v) : x(v), y(v), z(v) {}
     Vector3f(int _x, int _y) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(0) {}
     Vector3f(float _x, float _y, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
+    float operator[](int i) const { return i ? (i == 1 ? y : z) : x; }
     Vector3f operator+(const Vector3f& o) const { return Vector3f{x + o.x, y + o.y, z + o.z}; }
     Vector3f operator-(const Vector3f& o) const { return Vector3f{x - o.x, y - o.y, z - o.z}; }
     Vector3f operator*(float value) const { return Vector3f{x * value, y * value, z * value}; }
-    // Vector3f operator*(float value, const Vector3f& v) { return Vector3f{v.x * value, v.y * value, v.z * value}; }
     Vector3f operator/(float value) const { return {x / value, y / value, z / value}; }
     Vector3f& operator+=(const Vector3f& o) { x += o.x; y += o.y; z += o.z; return *this; }
     inline float norm() const { return std::sqrt(x*x + y*y + z*z); }
