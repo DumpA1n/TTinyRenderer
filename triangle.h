@@ -18,28 +18,20 @@ struct Triangle {
         color[1] = Vector3f{1.0f};
         color[2] = Vector3f{1.0f};
     }
+    std::array<Vector2f, 3> toVector2f() {
+        return { vertices[0].xy(), vertices[1].xy(), vertices[2].xy() };
+    }
     std::array<Vector3f, 3> toVector3f() {
-        return {
-            vertices[0].xyz(),
-            vertices[1].xyz(),
-            vertices[2].xyz()
-        };
+        return { vertices[0].xyz(), vertices[1].xyz(), vertices[2].xyz() };
     }
     std::array<Vector4f, 3> toVector4f() {
-        return {
-            Vector4f{vertices[0].xyz(), 1.0f},
-            Vector4f{vertices[1].xyz(), 1.0f},
-            Vector4f{vertices[2].xyz(), 1.0f}
-        };
+        return { vertices[0], vertices[1], vertices[2] };
     }
     void setVertices(int index, const Vector3f& v) {
         vertices[index] = Vector4f{v, 1.0f};
     }
-    void setVertices(int index, const Vector4f& v) {
-        vertices[index] = v;
-    }
-    void setTexCoords(int index, const Vector3f& v) {
-        tex_coords[index] = Vector2f{v.x, v.y};
+    void setTexCoords(int index, const Vector2f& v) {
+        tex_coords[index] = v;
     }
     void setNormals(int index, const Vector3f& v) {
         normals[index] = v;

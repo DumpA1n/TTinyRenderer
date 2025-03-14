@@ -24,16 +24,16 @@ Matrix4f get_model_matrix(const Vector3f& scale, const Vector3f& rotate, const V
 }
 
 Matrix4f get_view_matrix(const Vector3f& eye_pos) {
-    Vector3f up(0, 1, 0);
-    Vector3f target(0, 0, 0);
-    Vector3f z_axis = (eye_pos - target).normalized();
-    Vector3f x_axis = up.cross(z_axis).normalized();
-    Vector3f y_axis = z_axis.cross(x_axis);
+    Vector3f up{0, 1, 0};
+    Vector3f target{0, 0, 0};
+    Vector3f z_axis = normalized(eye_pos - target);
+    Vector3f x_axis = normalized(cross(up, z_axis));
+    Vector3f y_axis = cross(z_axis, x_axis);
 
     return Matrix4f{
-        x_axis.x, x_axis.y, x_axis.z, -x_axis.dot(eye_pos),
-        y_axis.x, y_axis.y, y_axis.z, -y_axis.dot(eye_pos),
-        z_axis.x, z_axis.y, z_axis.z, -z_axis.dot(eye_pos),
+        x_axis.x, x_axis.y, x_axis.z, -(x_axis * eye_pos),
+        y_axis.x, y_axis.y, y_axis.z, -(y_axis * eye_pos),
+        z_axis.x, z_axis.y, z_axis.z, -(z_axis * eye_pos),
         0,        0,        0,        1
     };
 }
@@ -60,7 +60,7 @@ Vector4f default_vertex_shader(const vertex_shader_payload& payload) {
 
     payload.view_pos = (viewmodel * payload.position).xyz();
 
-    payload.normal = (viewmodel.inverse().transpose() * Vector4f{payload.normal, 0.0f}).xyz().normalized();
+    payload.normal = normalized((viewmodel.inverse().transpose() * Vector4f{payload.normal, 0.0f}).xyz());
 
     payload.position = mvp * payload.position;
     payload.position.x /= payload.position.w;
@@ -82,18 +82,17 @@ Vector3f texture_fragment_shader(const fragment_shader_payload& payload) {
 }
 
 Vector3f african_head_fragment_shader(const fragment_shader_payload& payload) {
-    auto textures = payload.textureMap;
-    if (textures == nullptr) return {0.0f};
+    const std::unordered_map<std::string, Texture*>& textures = payload.textureMap;
+    
+    Texture* tex_texture  = textures.count("texture")  ? textures.at("texture")  : nullptr;
+    Texture* tex_specular = textures.count("specular") ? textures.at("specular") : nullptr;
+    Texture* tex_diffuse  = textures.count("diffuse")  ? textures.at("diffuse")  : nullptr;
+    Texture* tex_normal   = textures.count("normal")   ? textures.at("normal")   : nullptr;
 
-    Texture* tex_texture  = textures->count("texture")  ? textures->at("texture")  : nullptr;
-    Texture* tex_specular = textures->count("specular") ? textures->at("specular") : nullptr;
-    Texture* tex_diffuse  = textures->count("diffuse")  ? textures->at("diffuse")  : nullptr;
-    Texture* tex_normal   = textures->count("normal")   ? textures->at("normal")   : nullptr;
-
-    static auto sample_or_default = [](Texture* tex, const Vector2f& coords) {
+    static auto sample_or_default = [](Texture* tex, Vector2f coords) {
         return tex ? tex->sampler2D(coords) : Vector3f{0.0f};
     };
-
+    
     Vector3f texture  = sample_or_default(tex_texture, payload.tex_coords);
     Vector3f specular = sample_or_default(tex_specular, payload.tex_coords);
     Vector3f diffuse  = sample_or_default(tex_diffuse, payload.tex_coords);
@@ -110,23 +109,23 @@ Vector3f african_head_fragment_shader(const fragment_shader_payload& payload) {
     Vector3f normal = payload.normal;
 
     // 构建TBN矩阵
-    Vector3f n = normal.normalized();
+    Vector3f n = normalized(normal);
     float x = n.x, y = n.y, z = n.z;
-    Vector3f t(x * y / sqrt(x * x + z * z), sqrt(x * x + z * z), z * y / sqrt(x * x + z * z));
-    Vector3f b = n.cross(t);
+    Vector3f t{x*y / std::sqrt(x*x + z*z), std::sqrt(x*x + z*z), z*y / std::sqrt(x*x + z*z)};
+    Vector3f b = cross(n, (t));
     Matrix3f TBN{ t, b, n };
 
     // 法线贴图值从[0,1]映射到[-1,1]
     nm = nm * 2.0f - Vector3f{1.0f};
-    normal = (TBN * nm).normalized();
+    normal = normalized(TBN * nm);
 
     // 计算光照
-    Vector3f light_dir = (light.position - point).normalized();
-    Vector3f view_dir = (eye_pos - point).normalized();
-    Vector3f half_vector = (light_dir + view_dir).normalized();
+    Vector3f light_dir = normalized(light.position - point);
+    Vector3f view_dir = normalized(eye_pos - point);
+    Vector3f half_vector = normalized(light_dir + view_dir);
 
-    float diff = std::max(normal.dot(light_dir), 0.0f);
-    float spec = std::pow(std::max(normal.dot(half_vector), 0.0f), p);
+    float diff = std::max(normal * light_dir, 0.0f);
+    float spec = std::pow(std::max(normal * half_vector, 0.0f), p);
 
     Vector3f ambient = kd * 0.15f;
     Vector3f diffuse_component = kd * diff;
@@ -170,19 +169,19 @@ Vector3f phong_texture_fragment_shader(const fragment_shader_payload& payload) {
     
     for (auto& light : lights)
     {
-        Vector3f eye_dir = (eye_pos - point).normalized();
-        Vector3f light_dir = (light.position - point).normalized();
-        Vector3f normal_dir = normal.normalized();
+        Vector3f eye_dir = normalized(eye_pos - point);
+        Vector3f light_dir = normalized(light.position - point);
+        Vector3f normal_dir = normalized(normal);
 
         Vector3f I = light.intensity;
-        float   r2 = (light.position - point).squaredNorm();
-        Vector3f h = (eye_dir + light_dir).normalized();
+        float   r2 = squaredNorm(light.position - point);
+        Vector3f h = normalized(eye_dir + light_dir);
 
-        Vector3f ambient = ka.cwiseProduct(amb_light_intensity);
+        Vector3f ambient = cwiseProduct(ka, amb_light_intensity);
 
-        Vector3f diffuse = kd.cwiseProduct(I / r2) * std::max(0.0f, normal_dir.dot(light_dir));
+        Vector3f diffuse = cwiseProduct(kd, I / r2) * std::max(0.0f, normal_dir * light_dir);
 
-        Vector3f specular = ks.cwiseProduct(I / r2) * std::max(0.0f, std::pow(normal_dir.dot(h), p));
+        Vector3f specular = cwiseProduct(ks, I / r2) * std::max(0.0f, std::pow(normal_dir * h, p));
 
         result_color += ambient + diffuse + specular;
     }
@@ -218,19 +217,19 @@ Vector3f phong_fragment_shader(const fragment_shader_payload& payload) {
     
     for (auto& light : lights)
     {
-        Vector3f eye_dir = (eye_pos - point).normalized();
-        Vector3f light_dir = (light.position - point).normalized();
-        Vector3f normal_dir = normal;
+        Vector3f eye_dir = normalized(eye_pos - point);
+        Vector3f light_dir = normalized(light.position - point);
+        Vector3f normal_dir = normalized(normal);
 
         Vector3f I = light.intensity;
-        float   r2 = (light.position - point).squaredNorm();
-        Vector3f h = (eye_dir + light_dir).normalized();
+        float   r2 = squaredNorm(light.position - point);
+        Vector3f h = normalized(eye_dir + light_dir);
 
-        Vector3f ambient = ka.cwiseProduct(amb_light_intensity);
+        Vector3f ambient = cwiseProduct(ka, amb_light_intensity);
 
-        Vector3f diffuse = kd.cwiseProduct(I / r2) * std::max(0.0f, normal_dir.dot(light_dir));
+        Vector3f diffuse = cwiseProduct(kd, I / r2) * std::max(0.0f, normal_dir * light_dir);
 
-        Vector3f specular = ks.cwiseProduct(I / r2) * std::max(0.0f, std::pow(normal_dir.dot(h), p));
+        Vector3f specular = cwiseProduct(ks, I / r2) * std::max(0.0f, std::pow(normal_dir * h, p));
 
         result_color += ambient + diffuse + specular;
     }

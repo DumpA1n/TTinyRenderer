@@ -1,64 +1,134 @@
 #pragma once
 
+#include <cstdint>
 #include <cmath>
 #include <cstring>
 #include <array>
 #include <stdexcept>
-#include <iostream>
+#include <cassert>
+#include <limits>
 
-struct Vector2i {
-    int x, y;
-    Vector2i() : x(0), y(0) {}
-    Vector2i(int v) : x(v), y(v) {}
-    Vector2i(int _x, int _y) : x(_x), y(_y) {}
+template<int n, typename T>
+struct vec {
+    T data[n];
+    T  operator[](int i) const { assert(i >= 0 && i < n); return data[i]; }
+    T& operator[](int i)       { assert(i >= 0 && i < n); return data[i]; }
+};
+template<int n, typename T>
+vec<n, T> operator+(const vec<n, T>& lv, const vec<n, T>& rv) {
+    auto ret = lv;
+    for (int i = 0; i < n; i++) { ret[i] += rv[i]; }
+    return ret;
+}
+template<int n, typename T>
+vec<n, T>& operator+=(vec<n, T>& lv, const vec<n, T>& rv) {
+    for (int i = 0; i < n; i++) { lv[i] += rv[i]; }
+    return lv;
+}
+template<int n, typename T>
+vec<n, T> operator-(const vec<n, T>& lv, const vec<n, T>& rv) {
+    auto ret = lv;
+    for (int i = 0; i < n; i++) { ret[i] -= rv[i]; }
+    return ret;
+}
+template<int n, typename T>
+vec<n, T>& operator-=(vec<n, T>& lv, const vec<n, T>& rv) {
+    for (int i = 0; i < n; i++) { lv[i] -= rv[i]; }
+    return lv;
+}
+template<int n, typename T>
+T operator*(const vec<n, T>& lv, const vec<n, T>& rv) {
+    T ret{0};
+    for (int i = 0; i < n; i++) { ret += lv[i] * rv[i]; }
+    return ret;
+}
+template<int n, typename T>
+vec<n, T> operator*(const vec<n, T>& lv, const T& va) {
+    auto ret = lv;
+    for (int i = 0; i < n; i++) { ret[i] *= va; }
+    return ret;
+}
+template<int n, typename T>
+vec<n, T> operator*(const T& va, const vec<n, T>& lv) {
+    return lv * va;
+}
+template<int n, typename T>
+vec<n, T> operator/(const vec<n, T>& lv, const T& va) {
+    auto ret = lv;
+    for (int i = 0; i < n; i++) { ret[i] /= va; }
+    return ret;
+}
+
+template<int n, typename T>
+inline T norm(const vec<n, T>& v) {
+    return std::sqrt(v*v);
+}
+template<int n, typename T>
+inline T squaredNorm(const vec<n, T>& v) {
+    return v*v;
+}
+template<int n, typename T>
+inline vec<n, T> normalized(const vec<n, T>& v) {
+    T nm = norm(v);
+    return (nm > std::numeric_limits<T>::epsilon()) ? (v / nm) : v;
+}
+template<int n, typename T>
+inline vec<n, T> cwiseProduct(const vec<n, T>& lv, const vec<n, T>& rv) {
+    auto ret = lv;
+    for (int i = 0; i < n; i++) { ret[i] *= rv[i]; }
+    return ret;
+}
+
+template<typename T>
+struct vec<2, T> {
+    T x = 0, y = 0;
+    vec() = default;
+    vec(T va) : x(va), y(va) {}
+    vec(T x, T y) : x(x), y(y) {}
+    T  operator[](int i) const { assert(i >= 0 && i < 2); return reinterpret_cast<const T*>(this)[i]; }
+    T& operator[](int i)       { assert(i >= 0 && i < 2); return reinterpret_cast<      T*>(this)[i]; }
 };
 
-struct Vector2f {
-    float x, y;
-    Vector2f() : x(0), y(0) {}
-    Vector2f(float v) : x(v), y(v) {}
-    Vector2f(float _x, float _y) : x(_x), y(_y) {}
-    Vector2f uv() const { return {x, y}; }
+template<typename T>
+struct vec<3, T> {
+    T x = 0, y = 0, z = 0;
+    vec() = default;
+    vec(T va) : x(va), y(va), z(va) {}
+    vec(T x, T y, T z) : x(x), y(y), z(z) {}
+    vec(const vec<2, T>& v2, T z) : x(v2.x), y(v2.y), z(z) {}
+    T  operator[](int i) const { assert(i >= 0 && i < 3); return reinterpret_cast<const T*>(this)[i]; }
+    T& operator[](int i)       { assert(i >= 0 && i < 3); return reinterpret_cast<      T*>(this)[i]; }
+    vec<2, T> xy() { return {x, y}; }
 };
 
-struct Vector3f {
-    float x, y, z;
-    Vector3f() : x(0), y(0), z(0) {}
-    Vector3f(float v) : x(v), y(v), z(v) {}
-    Vector3f(int _x, int _y) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(0) {}
-    Vector3f(float _x, float _y, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
-    float operator[](int i) const { return i ? (i == 1 ? y : z) : x; }
-    Vector3f operator+(const Vector3f& o) const { return Vector3f{x + o.x, y + o.y, z + o.z}; }
-    Vector3f operator-(const Vector3f& o) const { return Vector3f{x - o.x, y - o.y, z - o.z}; }
-    Vector3f operator*(float value) const { return Vector3f{x * value, y * value, z * value}; }
-    Vector3f operator/(float value) const { return {x / value, y / value, z / value}; }
-    Vector3f& operator+=(const Vector3f& o) { x += o.x; y += o.y; z += o.z; return *this; }
-    inline float norm() const { return std::sqrt(x*x + y*y + z*z); }
-    inline float squaredNorm() const { return x*x + y*y + z*z; }
-    inline Vector3f normalized() const { return *this / norm(); }
-    inline Vector3f cwiseProduct(const Vector3f& o) const { return {x*o.x, y*o.y, z*o.z}; }
-    inline float dot(const Vector3f& o) const { return x * o.x + y * o.y + z * o.z; }
-    inline Vector3f cross(const Vector3f& o) const { return {y*o.z - z*o.y, z*o.x - x*o.z, x*o.y - y*o.x}; }
-    Vector2f xy() const { return {x, y}; }
+template<typename T>
+struct vec<4, T> {
+    T x = 0, y = 0, z = 0, w = 0;
+    vec() = default;
+    vec(T va) : x(va), y(va), z(va), w(va) {}
+    vec(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
+    vec(const vec<3, T>& v3, T w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
+    T  operator[](int i) const { assert(i >= 0 && i < 4); return reinterpret_cast<const T*>(this)[i]; }
+    T& operator[](int i)       { assert(i >= 0 && i < 4); return reinterpret_cast<      T*>(this)[i]; }
+    vec<2, T> xy() { return {x, y}; }
+    vec<3, T> xyz() { return {x, y, z}; }
 };
 
-struct Vector4f {
-    float x, y, z, w;
-    Vector4f() : x(0), y(0), z(0), w(0) {}
-    Vector4f(float v) : x(v), y(v), z(v), w(v) {}
-    Vector4f(float _x, float _y, float _z, float _w = 0.0f) : x(_x), y(_y), z(_z), w(_w) {}
-    Vector4f(int _x, int _y, int _z) : x(static_cast<float>(_x)), y(static_cast<float>(_y)), z(static_cast<float>(_z)), w(0) {}
-    Vector4f(const Vector3f o, float _w) : x(o.x), y(o.y), z(o.z), w(_w) {}
-    Vector2f xy() const { return {x, y}; }
-    Vector3f xyz() const { return {x, y, z}; }
-};
+using vec2i = vec<2, int>;
+using vec2f = vec<2, float>;
+using vec3f = vec<3, float>;
+using vec4f = vec<4, float>;
+using vec3c = vec<3, uint8_t>;
 
-struct Vector3c {
-    uint8_t x, y, z;
-    Vector3c() : x(0), y(0), z(0) {}
-    Vector3c(uint8_t v) : x(v), y(v), z(v) {}
-    Vector3c(uint8_t _x, uint8_t _y, uint8_t _z = 0) : x(_x), y(_y), z(_z) {}
-};
+// inline vec3f cross(const vec3f& lv, const vec3f& rv) { return {lv.y*rv.z - lv.z*rv.y, lv.z*rv.x - lv.x*rv.z, lv.x*rv.y - lv.y*rv.x}; }
+
+using Vector2i = vec<2, int>;
+using Vector2f = vec<2, float>;
+using Vector3f = vec<3, float>;
+using Vector4f = vec<4, float>;
+using Vector3c = vec<3, uint8_t>;
+
+inline Vector3f cross(const Vector3f& lv, const Vector3f& rv) { return {lv.y*rv.z - lv.z*rv.y, lv.z*rv.x - lv.x*rv.z, lv.x*rv.y - lv.y*rv.x}; }
 
 struct Matrix3f {
     std::array<std::array<float, 3>, 3> m;
@@ -99,7 +169,7 @@ struct Matrix3f {
         float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
         float y_new = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
         float z_new = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z;
-        return Vector3f(x_new, y_new, z_new);
+        return Vector3f{x_new, y_new, z_new};
     }
 };
 
@@ -145,14 +215,14 @@ struct Matrix4f {
         float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
         float y_new = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
         float z_new = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z;
-        return Vector3f(x_new, y_new, z_new);
+        return Vector3f{x_new, y_new, z_new};
     }
     Vector4f operator*(const Vector4f& v) const {
         float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * v.w;
         float y_new = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * v.w;
         float z_new = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * v.w;
         float w_new = m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w;
-        return Vector4f(x_new, y_new, z_new, w_new);
+        return Vector4f{x_new, y_new, z_new, w_new};
     }
 
     Matrix4f transpose() const {

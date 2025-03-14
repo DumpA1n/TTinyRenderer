@@ -12,7 +12,7 @@ Texture::Texture(const std::string& filename) {
     std::cout << "Texture loaded: " << filename << ", width: " << width << ", height: " << height << ", channels: " << channels << std::endl;
 }
 
-Vector3f Texture::sampler2D(float u, float v) {
+Vector3f Texture::sampler2D(const float& u, const float& v) {
     int tex_x = std::clamp(u * width, 0.0f, (float)width);
     int tex_y =  std::clamp(v * height, 0.0f, (float)height);
     int index = (tex_y * width + tex_x) * channels;
@@ -23,7 +23,7 @@ Vector3f Texture::sampler2D(float u, float v) {
     };
 }
 
-Vector3f Texture::sampler2D(Vector2f uv) {
+Vector3f Texture::sampler2D(const Vector2f& uv) {
     int tex_x = std::clamp(uv.x * width, 0.0f, (float)width);
     int tex_y =  std::clamp(uv.y * height, 0.0f, (float)height);
     int index = (tex_y * width + tex_x) * channels;

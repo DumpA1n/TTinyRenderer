@@ -13,6 +13,6 @@ public:
     int width, height, channels;
 
     Texture(const std::string& filename);
-    Vector3f sampler2D(float u, float v);
-    Vector3f sampler2D(Vector2f uv);
+    Vector3f sampler2D(const float& u, const float& v);
+    Vector3f sampler2D(const Vector2f& uv);
 };

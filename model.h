@@ -9,13 +9,16 @@
 #include "mmath.h"
 
 class Model {
-public:
+private:
     std::vector<Vector3f> vertices;   // v  顶点坐标
-    std::vector<Vector3f> tex_coords;  // vt 纹理坐标
+    std::vector<Vector2f> tex_coords; // vt 纹理坐标
     std::vector<Vector3f> normals;    // vn 法线
     std::vector<int> v_indices;       // v  索引
     std::vector<int> vt_indices;      // vt 索引
     std::vector<int> vn_indices;      // vn 索引
+    size_t indices_count;
+public:
+    Model() : indices_count(0) {}
 
     void load(const std::string& filename) {
         std::ifstream file(filename);
@@ -38,7 +41,7 @@ public:
             }
             // 纹理坐标 vt
             else if (type == "vt") {
-                Vector3f vt;
+                Vector2f vt;
                 iss >> vt.x >> vt.y;
                 vt.y = 1 - vt.y;
                 tex_coords.push_back(vt);
@@ -60,9 +63,23 @@ public:
                     v_indices.push_back(--vIdx);
                     vt_indices.push_back(--vtIdx);
                     vn_indices.push_back(--vnIdx);
+                    indices_count++;
                 }
             }
         }
         file.close();
+    }
+
+    size_t size(){
+        return indices_count;
+    }
+    Vector3f& getVertices(int index) {
+        return vertices[v_indices[index]];
+    }
+    Vector2f& getTexCoords(int index) {
+        return tex_coords[vt_indices[index]];
+    }
+    Vector3f& getNormals(int index) {
+        return normals[vn_indices[index]];
     }
 };
