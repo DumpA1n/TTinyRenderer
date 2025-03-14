@@ -146,7 +146,7 @@ void Rasterizer::rasterize(Triangle* t, Vector3f* view_pos) {
                         Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals[0], t->normals[1], t->normals[2], 1);
                         Vector2f interpolated_texcoords = interpolate(alpha, beta, gamma, t->tex_coords[0], t->tex_coords[1], t->tex_coords[2], 1);
                         Vector3f interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos[0], view_pos[1], view_pos[2], 1);
-                        fragment_shader_payload payload({interpolated_color, interpolated_normal, interpolated_texcoords, texture, textureMap});
+                        fragment_shader_payload payload({interpolated_color, interpolated_normal, interpolated_texcoords, texture, &textureMap});
                         payload.view_pos = interpolated_shadingcoords;
                         set_pixel(x, y, fragment_shader(payload));
                     } else {

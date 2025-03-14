@@ -82,12 +82,12 @@ Vector3f texture_fragment_shader(const fragment_shader_payload& payload) {
 }
 
 Vector3f african_head_fragment_shader(const fragment_shader_payload& payload) {
-    const std::unordered_map<std::string, Texture*>& textures = payload.textureMap;
+    auto textures = payload.textureMap;
     
-    Texture* tex_texture  = textures.count("texture")  ? textures.at("texture")  : nullptr;
-    Texture* tex_specular = textures.count("specular") ? textures.at("specular") : nullptr;
-    Texture* tex_diffuse  = textures.count("diffuse")  ? textures.at("diffuse")  : nullptr;
-    Texture* tex_normal   = textures.count("normal")   ? textures.at("normal")   : nullptr;
+    Texture* tex_texture  = textures->count("texture")  ? textures->at("texture")  : nullptr;
+    Texture* tex_specular = textures->count("specular") ? textures->at("specular") : nullptr;
+    Texture* tex_diffuse  = textures->count("diffuse")  ? textures->at("diffuse")  : nullptr;
+    Texture* tex_normal   = textures->count("normal")   ? textures->at("normal")   : nullptr;
 
     static auto sample_or_default = [](Texture* tex, Vector2f coords) {
         return tex ? tex->sampler2D(coords) : Vector3f{0.0f};
