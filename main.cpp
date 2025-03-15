@@ -26,6 +26,7 @@ struct Shader {
 };
 
 int main() {
+    auto start = std::chrono::high_resolution_clock::now(); // 记录开始时间
     Rasterizer rst(WIDTH, HEIGHT, 4);
     Model obj;
 
@@ -89,5 +90,9 @@ int main() {
         stbi_write_png("out.png", WIDTH, HEIGHT, rst.channels, rst.get_current_frame_buffer().data(), 0);
         break;
     }
+
+    auto end = std::chrono::high_resolution_clock::now(); // 记录结束时间
+    std::chrono::duration<double, std::milli> elapsed = end - start; // 计算耗时（毫秒）
+    std::cout << "函数执行时间: " << elapsed.count() << " 毫秒\n";
     return 0;
 }

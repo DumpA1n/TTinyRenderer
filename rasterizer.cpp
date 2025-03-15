@@ -72,7 +72,7 @@ inline static Vector2f interpolate(float alpha, float beta, float gamma, const V
     return Vector2f{u, v};
 }
 bool Rasterizer::isInsideTriangle2D(const Vector3f& p, Triangle* t) {
-    auto v = t->toVector3f();
+    auto v = t->toVector3f().data();
     float n1 = cross(v[1] - v[0], p - v[0]).z;
     float n2 = cross(v[2] - v[1], p - v[1]).z;
     float n3 = cross(v[0] - v[2], p - v[2]).z;

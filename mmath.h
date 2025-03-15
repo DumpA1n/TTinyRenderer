@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <cstdint>
 #include <cmath>
 #include <cstring>
@@ -8,12 +9,21 @@
 #include <cassert>
 #include <limits>
 
+#if defined(_MSC_VER)
+    #define FORCEINLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+    #define FORCEINLINE __attribute__((always_inline)) inline
+#else
+    #define FORCEINLINE inline
+#endif
+
 template<int n, typename T>
 struct vec {
     T data[n];
-    T  operator[](int i) const { assert(i >= 0 && i < n); return data[i]; }
-    T& operator[](int i)       { assert(i >= 0 && i < n); return data[i]; }
+    inline T  operator[](int i) const { assert(i >= 0 && i < n); return data[i]; }
+    inline T& operator[](int i)       { assert(i >= 0 && i < n); return data[i]; }
 };
+
 template<int n, typename T>
 vec<n, T> operator+(const vec<n, T>& lv, const vec<n, T>& rv) {
     auto ret = lv;
@@ -60,20 +70,20 @@ vec<n, T> operator/(const vec<n, T>& lv, const T& va) {
 }
 
 template<int n, typename T>
-inline T norm(const vec<n, T>& v) {
+FORCEINLINE T norm(const vec<n, T>& v) {
     return std::sqrt(v*v);
 }
 template<int n, typename T>
-inline T squaredNorm(const vec<n, T>& v) {
+FORCEINLINE T squaredNorm(const vec<n, T>& v) {
     return v*v;
 }
 template<int n, typename T>
-inline vec<n, T> normalized(const vec<n, T>& v) {
+FORCEINLINE vec<n, T> normalized(const vec<n, T>& v) {
     T nm = norm(v);
     return (nm > std::numeric_limits<T>::epsilon()) ? (v / nm) : v;
 }
 template<int n, typename T>
-inline vec<n, T> cwiseProduct(const vec<n, T>& lv, const vec<n, T>& rv) {
+FORCEINLINE vec<n, T> cwiseProduct(const vec<n, T>& lv, const vec<n, T>& rv) {
     auto ret = lv;
     for (int i = 0; i < n; i++) { ret[i] *= rv[i]; }
     return ret;
@@ -85,9 +95,17 @@ struct vec<2, T> {
     vec() = default;
     vec(T va) : x(va), y(va) {}
     vec(T x, T y) : x(x), y(y) {}
-    T  operator[](int i) const { assert(i >= 0 && i < 2); return reinterpret_cast<const T*>(this)[i]; }
-    T& operator[](int i)       { assert(i >= 0 && i < 2); return reinterpret_cast<      T*>(this)[i]; }
+    inline T  operator[](int i) const { assert(i >= 0 && i < 2); return reinterpret_cast<const T*>(this)[i]; }
+    inline T& operator[](int i)       { assert(i >= 0 && i < 2); return reinterpret_cast<      T*>(this)[i]; }
+    inline const void* data() const { return reinterpret_cast<const void*>(this); }
+    inline       void* data()       { return reinterpret_cast<      void*>(this); }
 };
+
+template<typename T> FORCEINLINE vec<2, T> operator+(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x+v2.x, v1.y+v2.y }; }
+template<typename T> FORCEINLINE vec<2, T> operator-(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x-v2.x, v1.y-v2.y }; }
+template<typename T> FORCEINLINE        T  operator*(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x*v2.x + v1.y*v2.y }; }
+template<typename T> FORCEINLINE vec<2, T> operator*(const vec<2, T>& v1,        const T & va) { return { v1.x*va, v1.y*va }; }
+template<typename T> FORCEINLINE vec<2, T> operator*(       const T & va, const vec<2, T>& v1) { return { v1.x*va, v1.y*va }; }
 
 template<typename T>
 struct vec<3, T> {
@@ -96,10 +114,31 @@ struct vec<3, T> {
     vec(T va) : x(va), y(va), z(va) {}
     vec(T x, T y, T z) : x(x), y(y), z(z) {}
     vec(const vec<2, T>& v2, T z) : x(v2.x), y(v2.y), z(z) {}
-    T  operator[](int i) const { assert(i >= 0 && i < 3); return reinterpret_cast<const T*>(this)[i]; }
-    T& operator[](int i)       { assert(i >= 0 && i < 3); return reinterpret_cast<      T*>(this)[i]; }
-    vec<2, T> xy() { return {x, y}; }
+    inline T  operator[](int i) const { assert(i >= 0 && i < 3); return reinterpret_cast<const T*>(this)[i]; }
+    inline T& operator[](int i)       { assert(i >= 0 && i < 3); return reinterpret_cast<      T*>(this)[i]; }
+    inline vec<2, T> xy() { return {x, y}; }
+    inline const void* data() const { return reinterpret_cast<const void*>(this); }
+    inline       void* data()       { return reinterpret_cast<      void*>(this); }
+#if defined (_M_ARM64)
+    template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
+    float32x4_t load() const {
+        alignas(16) float _data[4] = {x, y, z, 0.0f};
+        return vld1q_f32(_data);
+    }
+    template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
+    void store(const float32x4_t& _v) {
+        alignas(16) float _data[4];
+        vst1q_f32(_data, _v);
+        x = _data[0], y = _data[1], z = _data[2];
+    }
+#endif
 };
+
+template<typename T> FORCEINLINE vec<3, T> operator+(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x+v2.x, v1.y+v2.y, v1.z+v2.z }; }
+template<typename T> FORCEINLINE vec<3, T> operator-(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x-v2.x, v1.y-v2.y, v1.z-v2.z }; }
+template<typename T> FORCEINLINE        T  operator*(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x*v2.x + v1.y*v2.y + v1.z*v2.z }; }
+template<typename T> FORCEINLINE vec<3, T> operator*(const vec<3, T>& v1,        const T & va) { return { v1.x*va, v1.y*va, v1.z*va }; }
+template<typename T> FORCEINLINE vec<3, T> operator*(       const T & va, const vec<3, T>& v1) { return { v1.x*va, v1.y*va, v1.z*va }; }
 
 template<typename T>
 struct vec<4, T> {
@@ -108,11 +147,19 @@ struct vec<4, T> {
     vec(T va) : x(va), y(va), z(va), w(va) {}
     vec(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
     vec(const vec<3, T>& v3, T w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
-    T  operator[](int i) const { assert(i >= 0 && i < 4); return reinterpret_cast<const T*>(this)[i]; }
-    T& operator[](int i)       { assert(i >= 0 && i < 4); return reinterpret_cast<      T*>(this)[i]; }
-    vec<2, T> xy() { return {x, y}; }
-    vec<3, T> xyz() { return {x, y, z}; }
+    inline T  operator[](int i) const { assert(i >= 0 && i < 4); return reinterpret_cast<const T*>(this)[i]; }
+    inline T& operator[](int i)       { assert(i >= 0 && i < 4); return reinterpret_cast<      T*>(this)[i]; }
+    inline vec<2, T> xy() { return {x, y}; }
+    inline vec<3, T> xyz() { return {x, y, z}; }
+    inline const void* data() const { return reinterpret_cast<const void*>(this); }
+    inline       void* data()       { return reinterpret_cast<      void*>(this); }
 };
+
+template<typename T> FORCEINLINE vec<4, T> operator+(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x+v2.x, v1.y+v2.y, v1.z+v2.z, v1.w+v2.w }; }
+template<typename T> FORCEINLINE vec<4, T> operator-(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x-v2.x, v1.y-v2.y, v1.z-v2.z, v1.w-v2.w }; }
+template<typename T> FORCEINLINE        T  operator*(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x*v2.x + v1.y*v2.y + v1.z*v2.z + v1.w*v2.w }; }
+template<typename T> FORCEINLINE vec<4, T> operator*(const vec<4, T>& v1,        const T & va) { return { v1.x*va, v1.y*va, v1.z*va, v1.w*va }; }
+template<typename T> FORCEINLINE vec<4, T> operator*(       const T & va, const vec<4, T>& v1) { return { v1.x*va, v1.y*va, v1.z*va, v1.w*va }; }
 
 using vec2i = vec<2, int>;
 using vec2f = vec<2, float>;
@@ -128,7 +175,19 @@ using Vector3f = vec<3, float>;
 using Vector4f = vec<4, float>;
 using Vector3c = vec<3, uint8_t>;
 
-inline Vector3f cross(const Vector3f& lv, const Vector3f& rv) { return {lv.y*rv.z - lv.z*rv.y, lv.z*rv.x - lv.x*rv.z, lv.x*rv.y - lv.y*rv.x}; }
+// FORCEINLINE Vector3f cross(const Vector3f& v1, const Vector3f& v2) { return {v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x}; }
+
+inline Vector3f cross(const Vector3f& v1, const Vector3f& v2) {
+#if defined (_M_ARM64)
+
+#elif defined (_M_X64)
+
+#else
+    return { v1.y*v2.z - v1.z*v2.y, 
+             v1.z*v2.x - v1.x*v2.z, 
+             v1.x*v2.y - v1.y*v2.x };
+#endif
+}
 
 struct Matrix3f {
     std::array<std::array<float, 3>, 3> m;
