@@ -17,6 +17,12 @@
     #define FORCEINLINE inline
 #endif
 
+#if defined (__aarch64__)
+    #include <arm_neon.h>
+#elif defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
+    #include <immintrin.h>
+#endif
+
 template<int n, typename T>
 struct vec {
     T data[n];
@@ -119,7 +125,7 @@ struct vec<3, T> {
     inline vec<2, T> xy() { return {x, y}; }
     inline const void* data() const { return reinterpret_cast<const void*>(this); }
     inline       void* data()       { return reinterpret_cast<      void*>(this); }
-#if defined (_M_ARM64)
+#if defined (__aarch64__)
     template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
     float32x4_t load() const {
         alignas(16) float _data[4] = {x, y, z, 0.0f};
@@ -153,6 +159,19 @@ struct vec<4, T> {
     inline vec<3, T> xyz() { return {x, y, z}; }
     inline const void* data() const { return reinterpret_cast<const void*>(this); }
     inline       void* data()       { return reinterpret_cast<      void*>(this); }
+#if defined (__aarch64__)
+    template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
+    float32x4_t load() const {
+        alignas(16) float _data[4] = {x, y, z, w};
+        return vld1q_f32(_data);
+    }
+    template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
+    void store(const float32x4_t& _v) {
+        alignas(16) float _data[4];
+        vst1q_f32(_data, _v);
+        x = _data[0], y = _data[1], z = _data[2], w = _data[3];
+    }
+#endif
 };
 
 template<typename T> FORCEINLINE vec<4, T> operator+(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x+v2.x, v1.y+v2.y, v1.z+v2.z, v1.w+v2.w }; }
@@ -178,10 +197,46 @@ using Vector3c = vec<3, uint8_t>;
 // FORCEINLINE Vector3f cross(const Vector3f& v1, const Vector3f& v2) { return {v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x}; }
 
 inline Vector3f cross(const Vector3f& v1, const Vector3f& v2) {
-#if defined (_M_ARM64)
+#if defined (__aarch64__)
+    float32x4_t v1_xyz0 = v1.load();
+    float32x4_t v2_xyz0 = v2.load();
 
-#elif defined (_M_X64)
+    float32x4_t v1_yz0x = vextq_f32(v1_xyz0, v1_xyz0, 1);
+    float32x4_t v1_yzxx = vsetq_lane_f32(vgetq_lane_f32(v1_yz0x, 3), v1_yz0x, 2);
 
+    float32x4_t v2_z0xy = vextq_f32(v2_xyz0, v2_xyz0, 2);
+    float32x4_t v2_zxxy = vsetq_lane_f32(vgetq_lane_f32(v2_z0xy, 2), v2_z0xy, 1);
+    float32x4_t v2_zxyy = vsetq_lane_f32(vgetq_lane_f32(v2_z0xy, 3), v2_z0xy, 2);
+
+    float32x4_t v1_z0xy = vextq_f32(v1_xyz0, v1_xyz0, 2);
+    float32x4_t v1_zxxy = vsetq_lane_f32(vgetq_lane_f32(v1_z0xy, 2), v1_z0xy, 1);
+    float32x4_t v1_zxyy = vsetq_lane_f32(vgetq_lane_f32(v1_z0xy, 3), v1_z0xy, 2);
+
+    float32x4_t v2_yz0x = vextq_f32(v2_xyz0, v2_xyz0, 1);
+    float32x4_t v2_yzxx = vsetq_lane_f32(vgetq_lane_f32(v2_yz0x, 3), v2_yz0x, 2);
+
+    float32x4_t result = vsubq_f32(vmulq_f32(v1_yzxx, v2_zxyy), vmulq_f32(v1_zxyy, v2_yzxx));
+
+    Vector3f res;
+    res.store(result);
+    return res;
+#elif defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
+    __m128 a = _mm_set_ps(0, v1.z, v1.y, v1.x);
+    __m128 b = _mm_set_ps(0, v2.z, v2.y, v2.x);
+
+    __m128 a_yzx = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 0, 2, 1));
+    __m128 b_zxy = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 1, 0, 2));
+    __m128 a_zxy = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 1, 0, 2));
+    __m128 b_yzx = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 0, 2, 1));
+
+    __m128 result = _mm_sub_ps(_mm_mul_ps(a_yzx, b_zxy), _mm_mul_ps(a_zxy, b_yzx));
+
+    alignas(16) float resultArray[4];
+    _mm_store_ps(resultArray, result);
+    return {resultArray[0], resultArray[1], resultArray[2]};
+    
+    // __m128 result = _mm_sub_ps(_mm_mul_ps(_mm_set_ps(0, v1.x, v1.z, v1.y), _mm_set_ps(0, v2.y, v2.x, v2.z)), _mm_mul_ps(_mm_set_ps(0, v1.y, v1.x, v1.z), _mm_set_ps(0, v2.x, v2.z, v2.y)));
+    // return {result.m128_f32[0], result.m128_f32[1], result.m128_f32[2]};
 #else
     return { v1.y*v2.z - v1.z*v2.y, 
              v1.z*v2.x - v1.x*v2.z, 

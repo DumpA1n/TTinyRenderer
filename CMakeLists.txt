@@ -1,20 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 
+# if (WIN32)
+#     set(CMAKE_SYSTEM_NAME Android)
+#     set(CMAKE_SYSTEM_VERSION 27)
+#     set(ANDROID_PLATFORM 27)
+#     set(ANDROID_ABI arm64-v8a)
+#     set(ANDROID_NDK "C:/Users/DDD/AppData/Local/Android/Sdk/ndk/android-ndk-r27c")
+#     set(CMAKE_TOOLCHAIN_FILE "${ANDROID_NDK}/build/cmake/android.toolchain.cmake")
+# endif()
+
 project(TTinyRenderer)
 
 add_compile_options(-w)
 
 set(CMAKE_CXX_STANDARD 17)
-
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
-    message(STATUS "Target Architecture: x86_64 (AMD64)")
-    add_definitions(-DX86_64)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|AARCH64")
-    message(STATUS "Target Architecture: AArch64 (ARM64)")
-    add_definitions(-DAARCH64)
-else()
-    message(WARNING "Unknown Architecture: ${CMAKE_SYSTEM_PROCESSOR}")
-endif()
 
 # include_directories(${CMAKE_SOURCE_DIR})
 
