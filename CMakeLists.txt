@@ -11,11 +11,29 @@ cmake_minimum_required(VERSION 3.10)
 
 project(TTinyRenderer)
 
+enable_language(ASM)
+
 add_compile_options(-w)
 
 set(CMAKE_CXX_STANDARD 17)
 
 # include_directories(${CMAKE_SOURCE_DIR})
 
-# add_library(${CMAKE_PROJECT_NAME} SHARED main.cpp rasterizer.cpp texture.cpp shader.cpp)
-add_executable(${CMAKE_PROJECT_NAME} main.cpp rasterizer.cpp texture.cpp shader.cpp)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+
+file(GLOB_RECURSE SOURCES
+    ${CMAKE_SOURCE_DIR}/main.cpp
+    ${CMAKE_SOURCE_DIR}/rasterizer.cpp
+    ${CMAKE_SOURCE_DIR}/texture.cpp
+    ${CMAKE_SOURCE_DIR}/shader.cpp
+    # ${CMAKE_SOURCE_DIR}/aarch64_neon.s
+)
+
+add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
+# add_library(${CMAKE_PROJECT_NAME} SHARED ${SOURCES})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)

@@ -20,9 +20,14 @@ public:
     int height;
     int channels;
 
+    bool SSAA4x = false;
+    bool MSAA4x = true;
+
     std::vector<uint8_t> current_frame_buffer;
+    std::vector<std::vector<Vector3f>> current_frame_buffer_4x;
     std::vector<uint8_t> last_frame_buffer;
     std::vector<float> depth_buffer;
+    std::vector<std::vector<float>> depth_buffer_4x;
 
     Rasterizer(int width, int height, int stride);
 

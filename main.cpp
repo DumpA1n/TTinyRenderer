@@ -33,7 +33,14 @@ int main() {
     rst.set_vertex_shader((void*)&default_vertex_shader);
 
     std::string modelname = "africa_head";
+
+#if defined(_MSC_VER)
     std::string FilesDir = "../../";
+#elif defined(__GNUC__) || defined(__clang__)
+    std::string FilesDir = "../";
+#else
+    std::string FilesDir = "../";
+#endif
 
     if (modelname == "africa_head") {
         rst.set_fragment_shader((void*)&african_head_fragment_shader);

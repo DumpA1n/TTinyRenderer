@@ -17,6 +17,8 @@
     #define FORCEINLINE inline
 #endif
 
+#define SIMDON 1
+
 #if defined (__aarch64__)
     #include <arm_neon.h>
 #elif defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
@@ -127,12 +129,12 @@ struct vec<3, T> {
     inline       void* data()       { return reinterpret_cast<      void*>(this); }
 #if defined (__aarch64__)
     template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
-    float32x4_t load() const {
+    inline float32x4_t load() const {
         alignas(16) float _data[4] = {x, y, z, 0.0f};
         return vld1q_f32(_data);
     }
     template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
-    void store(const float32x4_t& _v) {
+    inline void store(const float32x4_t& _v) {
         alignas(16) float _data[4];
         vst1q_f32(_data, _v);
         x = _data[0], y = _data[1], z = _data[2];
@@ -161,12 +163,12 @@ struct vec<4, T> {
     inline       void* data()       { return reinterpret_cast<      void*>(this); }
 #if defined (__aarch64__)
     template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
-    float32x4_t load() const {
+    inline float32x4_t load() const {
         alignas(16) float _data[4] = {x, y, z, w};
         return vld1q_f32(_data);
     }
     template<typename U = T, typename std::enable_if<std::is_same<U, float>::value, int>::type = 0>
-    void store(const float32x4_t& _v) {
+    inline void store(const float32x4_t& _v) {
         alignas(16) float _data[4];
         vst1q_f32(_data, _v);
         x = _data[0], y = _data[1], z = _data[2], w = _data[3];
@@ -197,7 +199,7 @@ using Vector3c = vec<3, uint8_t>;
 // FORCEINLINE Vector3f cross(const Vector3f& v1, const Vector3f& v2) { return {v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x}; }
 
 inline Vector3f cross(const Vector3f& v1, const Vector3f& v2) {
-#if defined (__aarch64__)
+#if SIMDON && defined (__aarch64__)
     float32x4_t v1_xyz0 = v1.load();
     float32x4_t v2_xyz0 = v2.load();
 
@@ -220,7 +222,7 @@ inline Vector3f cross(const Vector3f& v1, const Vector3f& v2) {
     Vector3f res;
     res.store(result);
     return res;
-#elif defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
+#elif SIMDON && defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
     __m128 a = _mm_set_ps(0, v1.z, v1.y, v1.x);
     __m128 b = _mm_set_ps(0, v2.z, v2.y, v2.x);
 
@@ -242,6 +244,32 @@ inline Vector3f cross(const Vector3f& v1, const Vector3f& v2) {
              v1.z*v2.x - v1.x*v2.z, 
              v1.x*v2.y - v1.y*v2.x };
 #endif
+}
+
+
+template<int n, int m, typename T>
+struct mat {
+    int ind = 0;
+    std::array<std::array<T, m>, n> _M;
+};
+
+template<int n, int m, typename T>
+void operator<<(mat<n, m, T>& _im, float _va) {
+    _im._M[_im.ind][_im.ind++] = _va;
+}
+
+template<int n, int m, typename T>
+mat<n, m, T> operator*(const mat<n, m, T>& m1, const mat<n, m, T>& m2) {
+    
+}
+
+using mat4f = mat<4, 4, float>;
+inline void mfun() {
+    mat4f m1;
+    m1 << 1, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1;
 }
 
 struct Matrix3f {
@@ -324,6 +352,14 @@ struct Matrix4f {
             }
         }
         return result;
+// #define __aarch64__
+#if SIMDON && defined (__aarch64__)
+        
+#elif SIMDON && defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
+
+#else
+
+#endif
     }
     Vector3f operator*(const Vector3f& v) const {
         float x_new = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;

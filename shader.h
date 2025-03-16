@@ -20,6 +20,7 @@ struct fragment_shader_payload {
     Vector2f tex_coords;
     Texture* texture;
     std::unordered_map<std::string, Texture*> *textureMap;
+    fragment_shader_payload() {}
     fragment_shader_payload(const Vector3f& col, const Vector3f& nor, const Vector2f& tc, Texture* tex, decltype(textureMap) texMap) :
          color(col), normal(nor), tex_coords(tc), texture(tex), textureMap(texMap) {}
 };
