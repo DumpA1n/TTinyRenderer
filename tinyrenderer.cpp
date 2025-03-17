@@ -101,6 +101,8 @@ Java_com_example_tinyrenderer_NativeLib_startRender(
         }
 
         while (bIsRendering) {
+            auto start = std::chrono::high_resolution_clock::now();
+
             rst.clear_buffer({0.0f, 0.0f, 0.0f});
 
             rst.draw(triangles, RASTERIZE_MODE);
@@ -141,6 +143,10 @@ Java_com_example_tinyrenderer_NativeLib_startRender(
             }
 
             ANativeWindow_unlockAndPost(window);
+
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> elapsed = end - start; // 毫秒
+            LOGI("渲染耗时: %f 毫秒", elapsed.count());
 
             std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 30 FPS
         }

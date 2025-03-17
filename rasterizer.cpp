@@ -43,6 +43,8 @@ void Rasterizer::clear_buffer(const Vector3f& col) {
         for (int it : {0, 1, 2}) { current_frame_buffer[index + it] = static_cast<uint8_t>(col[it] * 255.0f); }
         if (channels == 4) { current_frame_buffer[index + 3] = 255; }
 
+        std::fill(current_frame_buffer_4x[i].begin(), current_frame_buffer_4x[i].end(), col);
+
         depth_buffer[i] = FLT_MAX;
 
         std::fill(depth_buffer_4x[i].begin(), depth_buffer_4x[i].end(), FLT_MAX);
@@ -232,7 +234,7 @@ void Rasterizer::ViewPort(Vector4f& p, int w, int h) {
 };
 
 void Rasterizer::draw(std::vector<Triangle*> triangles, enum DRAW_MODE mode) {
-    angleY = ((int)angleY + 1) % 360;
+    angleY = ((int)angleY + 2) % 360;
     for (const auto& t : triangles) {
         Triangle newTri = *t;
         Vector3f view_pos[3];
