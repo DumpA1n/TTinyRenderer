@@ -232,7 +232,7 @@ void Rasterizer::ViewPort(Vector4f& p, int w, int h) {
 };
 
 void Rasterizer::draw(std::vector<Triangle*> triangles, enum DRAW_MODE mode) {
-    angleY = ((int)angleY + 10) % 360;
+    angleY = ((int)angleY + 1) % 360;
     for (const auto& t : triangles) {
         Triangle newTri = *t;
         Vector3f view_pos[3];
