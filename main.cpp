@@ -32,7 +32,7 @@ int main() {
 
     rst.set_vertex_shader((void*)&default_vertex_shader);
 
-    std::string modelname = "africa_head";
+    std::string modelname = "spot";
 
 #if defined(_MSC_VER)
     std::string FilesDir = "../../";

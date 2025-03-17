@@ -109,11 +109,11 @@ struct vec<2, T> {
     inline       void* data()       { return reinterpret_cast<      void*>(this); }
 };
 
-template<typename T> FORCEINLINE vec<2, T> operator+(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x+v2.x, v1.y+v2.y }; }
-template<typename T> FORCEINLINE vec<2, T> operator-(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x-v2.x, v1.y-v2.y }; }
-template<typename T> FORCEINLINE        T  operator*(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x*v2.x + v1.y*v2.y }; }
-template<typename T> FORCEINLINE vec<2, T> operator*(const vec<2, T>& v1,        const T & va) { return { v1.x*va, v1.y*va }; }
-template<typename T> FORCEINLINE vec<2, T> operator*(       const T & va, const vec<2, T>& v1) { return { v1.x*va, v1.y*va }; }
+// template<typename T> FORCEINLINE vec<2, T> operator+(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x+v2.x, v1.y+v2.y }; }
+// template<typename T> FORCEINLINE vec<2, T> operator-(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x-v2.x, v1.y-v2.y }; }
+// template<typename T> FORCEINLINE        T  operator*(const vec<2, T>& v1, const vec<2, T>& v2) { return { v1.x*v2.x + v1.y*v2.y }; }
+// template<typename T> FORCEINLINE vec<2, T> operator*(const vec<2, T>& v1,        const T & va) { return { v1.x*va, v1.y*va }; }
+// template<typename T> FORCEINLINE vec<2, T> operator*(       const T & va, const vec<2, T>& v1) { return { v1.x*va, v1.y*va }; }
 
 template<typename T>
 struct vec<3, T> {
@@ -142,11 +142,11 @@ struct vec<3, T> {
 #endif
 };
 
-template<typename T> FORCEINLINE vec<3, T> operator+(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x+v2.x, v1.y+v2.y, v1.z+v2.z }; }
-template<typename T> FORCEINLINE vec<3, T> operator-(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x-v2.x, v1.y-v2.y, v1.z-v2.z }; }
-template<typename T> FORCEINLINE        T  operator*(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x*v2.x + v1.y*v2.y + v1.z*v2.z }; }
-template<typename T> FORCEINLINE vec<3, T> operator*(const vec<3, T>& v1,        const T & va) { return { v1.x*va, v1.y*va, v1.z*va }; }
-template<typename T> FORCEINLINE vec<3, T> operator*(       const T & va, const vec<3, T>& v1) { return { v1.x*va, v1.y*va, v1.z*va }; }
+// template<typename T> FORCEINLINE vec<3, T> operator+(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x+v2.x, v1.y+v2.y, v1.z+v2.z }; }
+// template<typename T> FORCEINLINE vec<3, T> operator-(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x-v2.x, v1.y-v2.y, v1.z-v2.z }; }
+// template<typename T> FORCEINLINE        T  operator*(const vec<3, T>& v1, const vec<3, T>& v2) { return { v1.x*v2.x + v1.y*v2.y + v1.z*v2.z }; }
+// template<typename T> FORCEINLINE vec<3, T> operator*(const vec<3, T>& v1,        const T & va) { return { v1.x*va, v1.y*va, v1.z*va }; }
+// template<typename T> FORCEINLINE vec<3, T> operator*(       const T & va, const vec<3, T>& v1) { return { v1.x*va, v1.y*va, v1.z*va }; }
 
 template<typename T>
 struct vec<4, T> {
@@ -176,11 +176,11 @@ struct vec<4, T> {
 #endif
 };
 
-template<typename T> FORCEINLINE vec<4, T> operator+(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x+v2.x, v1.y+v2.y, v1.z+v2.z, v1.w+v2.w }; }
-template<typename T> FORCEINLINE vec<4, T> operator-(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x-v2.x, v1.y-v2.y, v1.z-v2.z, v1.w-v2.w }; }
-template<typename T> FORCEINLINE        T  operator*(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x*v2.x + v1.y*v2.y + v1.z*v2.z + v1.w*v2.w }; }
-template<typename T> FORCEINLINE vec<4, T> operator*(const vec<4, T>& v1,        const T & va) { return { v1.x*va, v1.y*va, v1.z*va, v1.w*va }; }
-template<typename T> FORCEINLINE vec<4, T> operator*(       const T & va, const vec<4, T>& v1) { return { v1.x*va, v1.y*va, v1.z*va, v1.w*va }; }
+// template<typename T> FORCEINLINE vec<4, T> operator+(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x+v2.x, v1.y+v2.y, v1.z+v2.z, v1.w+v2.w }; }
+// template<typename T> FORCEINLINE vec<4, T> operator-(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x-v2.x, v1.y-v2.y, v1.z-v2.z, v1.w-v2.w }; }
+// template<typename T> FORCEINLINE        T  operator*(const vec<4, T>& v1, const vec<4, T>& v2) { return { v1.x*v2.x + v1.y*v2.y + v1.z*v2.z + v1.w*v2.w }; }
+// template<typename T> FORCEINLINE vec<4, T> operator*(const vec<4, T>& v1,        const T & va) { return { v1.x*va, v1.y*va, v1.z*va, v1.w*va }; }
+// template<typename T> FORCEINLINE vec<4, T> operator*(       const T & va, const vec<4, T>& v1) { return { v1.x*va, v1.y*va, v1.z*va, v1.w*va }; }
 
 using vec2i = vec<2, int>;
 using vec2f = vec<2, float>;
@@ -198,30 +198,37 @@ using Vector3c = vec<3, uint8_t>;
 
 // FORCEINLINE Vector3f cross(const Vector3f& v1, const Vector3f& v2) { return {v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x}; }
 
+#if SIMDON && defined (__aarch64__)
+    extern "C" void cross_neon(Vector3f* result, const Vector3f* v1, const Vector3f* v2);
+#endif
+
 inline Vector3f cross(const Vector3f& v1, const Vector3f& v2) {
 #if SIMDON && defined (__aarch64__)
-    float32x4_t v1_xyz0 = v1.load();
-    float32x4_t v2_xyz0 = v2.load();
+    Vector3f result;
+    cross_neon(&result, &v1, &v2);
+    return result;
+    // float32x4_t v1_xyz0 = v1.load();
+    // float32x4_t v2_xyz0 = v2.load();
 
-    float32x4_t v1_yz0x = vextq_f32(v1_xyz0, v1_xyz0, 1);
-    float32x4_t v1_yzxx = vsetq_lane_f32(vgetq_lane_f32(v1_yz0x, 3), v1_yz0x, 2);
+    // float32x4_t v1_yz0x = vextq_f32(v1_xyz0, v1_xyz0, 1);
+    // float32x4_t v1_yzxx = vsetq_lane_f32(vgetq_lane_f32(v1_yz0x, 3), v1_yz0x, 2);
 
-    float32x4_t v2_z0xy = vextq_f32(v2_xyz0, v2_xyz0, 2);
-    float32x4_t v2_zxxy = vsetq_lane_f32(vgetq_lane_f32(v2_z0xy, 2), v2_z0xy, 1);
-    float32x4_t v2_zxyy = vsetq_lane_f32(vgetq_lane_f32(v2_z0xy, 3), v2_z0xy, 2);
+    // float32x4_t v2_z0xy = vextq_f32(v2_xyz0, v2_xyz0, 2);
+    // float32x4_t v2_zxxy = vsetq_lane_f32(vgetq_lane_f32(v2_z0xy, 2), v2_z0xy, 1);
+    // float32x4_t v2_zxyy = vsetq_lane_f32(vgetq_lane_f32(v2_z0xy, 3), v2_z0xy, 2);
 
-    float32x4_t v1_z0xy = vextq_f32(v1_xyz0, v1_xyz0, 2);
-    float32x4_t v1_zxxy = vsetq_lane_f32(vgetq_lane_f32(v1_z0xy, 2), v1_z0xy, 1);
-    float32x4_t v1_zxyy = vsetq_lane_f32(vgetq_lane_f32(v1_z0xy, 3), v1_z0xy, 2);
+    // float32x4_t v1_z0xy = vextq_f32(v1_xyz0, v1_xyz0, 2);
+    // float32x4_t v1_zxxy = vsetq_lane_f32(vgetq_lane_f32(v1_z0xy, 2), v1_z0xy, 1);
+    // float32x4_t v1_zxyy = vsetq_lane_f32(vgetq_lane_f32(v1_z0xy, 3), v1_z0xy, 2);
 
-    float32x4_t v2_yz0x = vextq_f32(v2_xyz0, v2_xyz0, 1);
-    float32x4_t v2_yzxx = vsetq_lane_f32(vgetq_lane_f32(v2_yz0x, 3), v2_yz0x, 2);
+    // float32x4_t v2_yz0x = vextq_f32(v2_xyz0, v2_xyz0, 1);
+    // float32x4_t v2_yzxx = vsetq_lane_f32(vgetq_lane_f32(v2_yz0x, 3), v2_yz0x, 2);
 
-    float32x4_t result = vsubq_f32(vmulq_f32(v1_yzxx, v2_zxyy), vmulq_f32(v1_zxyy, v2_yzxx));
+    // float32x4_t result = vsubq_f32(vmulq_f32(v1_yzxx, v2_zxyy), vmulq_f32(v1_zxyy, v2_yzxx));
 
-    Vector3f res;
-    res.store(result);
-    return res;
+    // Vector3f res;
+    // res.store(result);
+    // return res;
 #elif SIMDON && defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
     __m128 a = _mm_set_ps(0, v1.z, v1.y, v1.x);
     __m128 b = _mm_set_ps(0, v2.z, v2.y, v2.x);
