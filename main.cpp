@@ -73,7 +73,7 @@ int main() {
     while (1) {
         rst.clear_buffer({0.0f, 0.0f, 0.0f});
 
-        rst.draw(triangles, RASTERIZE_MODE);
+        rst.draw(triangles);
 
         Vector3f tmp;
         Vector4f zero  = Vector4f{Vector3f{0, 0, 0}, 1};

@@ -33,6 +33,13 @@ std::thread renderThread;
 
 std::mutex renderMutex;
 
+std::atomic<RENDER_MODE> eRenderMode(TEXTURE_MODE);
+std::atomic<bool> bEnablNEON(false);
+std::atomic<bool> bEnablMSAA4x(false);
+std::atomic<bool> bEnablSSAA4x(false);
+std::atomic<bool> bEnablFXAA(false);
+std::atomic<bool> bEnablTAA(false);
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_tinyrenderer_NativeLib_startRender(
         JNIEnv* env,
@@ -103,9 +110,15 @@ Java_com_example_tinyrenderer_NativeLib_startRender(
         while (bIsRendering) {
             auto start = std::chrono::high_resolution_clock::now();
 
+            rst.setRenderMode(eRenderMode);
+            rst.setMSAA4x(bEnablMSAA4x);
+            rst.setSSAA4x(bEnablSSAA4x);
+
+            LOGI("4xMSAA state: %d", (int)rst.getMSAA4x());
+
             rst.clear_buffer({0.0f, 0.0f, 0.0f});
 
-            rst.draw(triangles, RASTERIZE_MODE);
+            rst.draw(triangles);
 
             Vector3f tmp;
             Vector4f zero  = Vector4f{Vector3f{0, 0, 0}, 1};
@@ -169,40 +182,61 @@ Java_com_example_tinyrenderer_NativeLib_stopRender(JNIEnv* env, jobject /* this 
         renderThread.join();
     }
 
-    // 创建 ANativeWindow
-    ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-    if (!window) {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "ANativeWindow_fromSurface failed");
-        return;
-    }
-
-    // 设置缓冲区参数
-    ANativeWindow_setBuffersGeometry(window, WIDTH, HEIGHT, WINDOW_FORMAT_RGBA_8888);
-
-    // 锁定缓冲区
-    ANativeWindow_Buffer buffer;
-    if (ANativeWindow_lock(window, &buffer, nullptr) != 0) {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "ANativeWindow_lock failed");
-        ANativeWindow_release(window);
-        return;
-    }
-
-    uint8_t* dst = (uint8_t*)buffer.bits;
-
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            int dst_index = (y * buffer.stride + x) * 4;  // RGBA
-            for (int i : {0, 1, 2, 3})
-                dst[dst_index + i] = 0;
-        }
-    }
-
-    ANativeWindow_unlockAndPost(window);
-
-    ANativeWindow_release(window);
+    // // 创建 ANativeWindow
+    // ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
+    // if (!window) {
+    //     __android_log_print(ANDROID_LOG_ERROR, TAG, "ANativeWindow_fromSurface failed");
+    //     return;
+    // }
+    //
+    // // 设置缓冲区参数
+    // ANativeWindow_setBuffersGeometry(window, WIDTH, HEIGHT, WINDOW_FORMAT_RGBA_8888);
+    //
+    // // 锁定缓冲区
+    // ANativeWindow_Buffer buffer;
+    // if (ANativeWindow_lock(window, &buffer, nullptr) != 0) {
+    //     __android_log_print(ANDROID_LOG_ERROR, TAG, "ANativeWindow_lock failed");
+    //     ANativeWindow_release(window);
+    //     return;
+    // }
+    //
+    // uint8_t* dst = (uint8_t*)buffer.bits;
+    //
+    // for (int y = 0; y < HEIGHT; y++) {
+    //     for (int x = 0; x < WIDTH; x++) {
+    //         int dst_index = (y * buffer.stride + x) * 4;  // RGBA
+    //         for (int i : {0, 1, 2, 3})
+    //             dst[dst_index + i] = 0;
+    //     }
+    // }
+    //
+    // ANativeWindow_unlockAndPost(window);
+    //
+    // ANativeWindow_release(window);
 }
 
 extern "C" JNIEXPORT int JNICALL
 Java_com_example_tinyrenderer_NativeLib_isRendering(JNIEnv* env, jobject /* this */) {
     return bIsRendering;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_tinyrenderer_NativeLib_setRenderMode(JNIEnv *env, jobject thiz,
+                                                          jint render_mode) {
+    // TODO: implement setRenderMode()
+    std::lock_guard<std::mutex> lock(renderMutex);
+    eRenderMode = static_cast<RENDER_MODE>(render_mode);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_tinyrenderer_NativeLib_setAAMode(JNIEnv *env, jobject thiz,
+                                                        jboolean b_msaa4x, jboolean b_ssaa4x, jboolean b_fxaa, jboolean b_taa) {
+    // TODO: implement setRenderAAMode()
+    std::lock_guard<std::mutex> lock(renderMutex);
+    bEnablMSAA4x = static_cast<bool>(b_msaa4x);
+    bEnablSSAA4x = static_cast<bool>(b_ssaa4x);
+    bEnablFXAA = static_cast<bool>(b_fxaa);
+    bEnablTAA = static_cast<bool>(b_taa);
 }

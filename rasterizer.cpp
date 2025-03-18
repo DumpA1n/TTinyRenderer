@@ -233,7 +233,7 @@ void Rasterizer::ViewPort(Vector4f& p, int w, int h) {
     p.z = p.z * f1 + f2;
 };
 
-void Rasterizer::draw(std::vector<Triangle*> triangles, enum DRAW_MODE mode) {
+void Rasterizer::draw(std::vector<Triangle*> triangles) {
     angleY = ((int)angleY + 2) % 360;
     for (const auto& t : triangles) {
         Triangle newTri = *t;
@@ -245,11 +245,11 @@ void Rasterizer::draw(std::vector<Triangle*> triangles, enum DRAW_MODE mode) {
         for (int i = 0; i < 3; i++)
             ViewPort(newTri.vertices[i], width, height);
 
-        if (mode == RASTERIZE_MODE)
+        if (renderMode == TEXTURE_MODE)
             rasterize(&newTri, view_pos);
-        else if (mode == LINE_FRAME_MODE)
+        else if (renderMode == LINE_FRAME_MODE)
             draw_triangle(&newTri, Vector3f{1.0f});
-        else if (mode == PURE_COLOR_MODE)
+        else if (renderMode == PURE_COLOR_MODE)
             draw_triangle_filled(&newTri, Vector3f{1.0f});
     }
 
@@ -264,4 +264,23 @@ void Rasterizer::draw(std::vector<Triangle*> triangles, enum DRAW_MODE mode) {
             }
         }
     }
+}
+
+void Rasterizer::setRenderMode(enum RENDER_MODE mode) {
+    this->renderMode = mode;
+}
+enum RENDER_MODE Rasterizer::getRenderMode() {
+    return this->renderMode;
+}
+void Rasterizer::setMSAA4x(bool state) {
+    this->MSAA4x = state;
+}
+bool Rasterizer::getMSAA4x() {
+    return this->MSAA4x;
+}
+void Rasterizer::setSSAA4x(bool state) {
+    this->SSAA4x = state;
+}
+bool Rasterizer::getSSAA4x() {
+    return this->SSAA4x;
 }

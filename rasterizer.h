@@ -8,8 +8,8 @@
 #include <string>
 #include <unordered_map>
 
-enum DRAW_MODE {
-    RASTERIZE_MODE = 1,
+enum RENDER_MODE {
+    TEXTURE_MODE = 1,
     LINE_FRAME_MODE = 2,
     PURE_COLOR_MODE = 3
 };
@@ -20,8 +20,9 @@ public:
     int height;
     int channels;
 
-    bool SSAA4x = false;
+    RENDER_MODE renderMode = TEXTURE_MODE;
     bool MSAA4x = true;
+    bool SSAA4x = false;
 
     std::vector<uint8_t> current_frame_buffer;
     std::vector<std::vector<Vector3f>> current_frame_buffer_4x;
@@ -57,5 +58,12 @@ public:
     void rasterize(Triangle* t, Vector3f* view_pos);
     void ViewPort(Vector4f& p, int w, int h);
 
-    void draw(std::vector<Triangle*> triangles, enum DRAW_MODE mode);
+    void draw(std::vector<Triangle*> triangles);
+
+    void setRenderMode(enum RENDER_MODE mode);
+    enum RENDER_MODE getRenderMode();
+    void setMSAA4x(bool state);
+    bool getMSAA4x();
+    void setSSAA4x(bool state);
+    bool getSSAA4x();
 };
