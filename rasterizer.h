@@ -59,6 +59,7 @@ public:
     void ViewPort(Vector4f& p, int w, int h);
 
     void draw(std::vector<Triangle*> triangles);
+    void draw_multi_thread(std::vector<Triangle*> triangles);
 
     void setRenderMode(enum RENDER_MODE mode);
     enum RENDER_MODE getRenderMode();

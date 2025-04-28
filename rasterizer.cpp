@@ -3,6 +3,10 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath> // round floor
+#include <future> // future
+
+#include "ThreadPool.h"
+#include "MyThreadPool.h"
 
 Rasterizer::Rasterizer(int width, int height, int channels) {
     this->width = width;
@@ -265,6 +269,88 @@ void Rasterizer::draw(std::vector<Triangle*> triangles) {
         }
     }
 }
+
+void Rasterizer::draw_multi_thread(std::vector<Triangle*> triangles) {
+    angleY = ((int)angleY + 2) % 360;
+
+    static MyThreadPool thread_pool(std::thread::hardware_concurrency());
+    std::vector<std::future<void>> tasks;
+
+    for (const auto& t : triangles) {
+        tasks.push_back(thread_pool.enqueue([=]() {
+            Triangle newTri = *t;
+            Vector3f view_pos[3];
+
+            for (int i = 0; i < 3; i++)
+                vertex_shader({newTri.vertices[i], newTri.normals[i], view_pos[i]});
+
+            for (int i = 0; i < 3; i++)
+                ViewPort(newTri.vertices[i], width, height);
+
+            if (renderMode == TEXTURE_MODE)
+                rasterize(&newTri, view_pos);
+            else if (renderMode == LINE_FRAME_MODE)
+                draw_triangle(&newTri, Vector3f{1.0f});
+            else if (renderMode == PURE_COLOR_MODE)
+                draw_triangle_filled(&newTri, Vector3f{1.0f});
+        }));
+    }
+
+    for (auto& t : tasks) t.get();
+
+    if (MSAA4x) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Vector3f accumulate_color;
+                for (int i = 0; i < 4; i++) {
+                    accumulate_color += current_frame_buffer_4x[y * width + x][i];
+                }
+                set_pixel(x, y, accumulate_color / 4.0f);
+            }
+        }
+    }
+}
+
+// void Rasterizer::draw_multi_thread(std::vector<Triangle*> triangles) {
+//     angleY = ((int)angleY + 2) % 360;
+
+//     static ThreadPool thread_pool(std::thread::hardware_concurrency());
+//     std::vector<std::future<void>> tasks;
+
+//     for (const auto& t : triangles) {
+//         tasks.push_back(thread_pool.enqueue([=]() {
+//             Triangle newTri = *t;
+//             Vector3f view_pos[3];
+
+//             for (int i = 0; i < 3; i++)
+//                 vertex_shader({newTri.vertices[i], newTri.normals[i], view_pos[i]});
+
+//             for (int i = 0; i < 3; i++)
+//                 ViewPort(newTri.vertices[i], width, height);
+
+//             if (renderMode == TEXTURE_MODE)
+//                 rasterize(&newTri, view_pos);
+//             else if (renderMode == LINE_FRAME_MODE)
+//                 draw_triangle(&newTri, Vector3f{1.0f});
+//             else if (renderMode == PURE_COLOR_MODE)
+//                 draw_triangle_filled(&newTri, Vector3f{1.0f});
+//         }));
+//     }
+
+//     for (auto& t : tasks) t.get();
+
+//     if (MSAA4x) {
+//         for (int y = 0; y < height; y++) {
+//             for (int x = 0; x < width; x++) {
+//                 Vector3f accumulate_color;
+//                 for (int i = 0; i < 4; i++) {
+//                     accumulate_color += current_frame_buffer_4x[y * width + x][i];
+//                 }
+//                 set_pixel(x, y, accumulate_color / 4.0f);
+//             }
+//         }
+//     }
+// }
 
 void Rasterizer::setRenderMode(enum RENDER_MODE mode) {
     this->renderMode = mode;

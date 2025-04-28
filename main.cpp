@@ -26,7 +26,8 @@ struct Shader {
 };
 
 int main() {
-    auto start = std::chrono::high_resolution_clock::now(); // 记录开始时间
+    auto start = std::chrono::high_resolution_clock::now(); // 计算耗时
+
     Rasterizer rst(WIDTH, HEIGHT, 4);
     Model obj;
 
@@ -73,7 +74,8 @@ int main() {
     while (1) {
         rst.clear_buffer({0.0f, 0.0f, 0.0f});
 
-        rst.draw(triangles);
+        // rst.draw(triangles);
+        rst.draw_multi_thread(triangles);
 
         Vector3f tmp;
         Vector4f zero  = Vector4f{Vector3f{0, 0, 0}, 1};
@@ -98,8 +100,8 @@ int main() {
         break;
     }
 
-    auto end = std::chrono::high_resolution_clock::now(); // 记录结束时间
-    std::chrono::duration<double, std::milli> elapsed = end - start; // 计算耗时（毫秒）
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "函数执行时间: " << elapsed.count() << " 毫秒\n";
     return 0;
 }
