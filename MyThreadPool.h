@@ -23,12 +23,22 @@ public:
     }
 
     template<class F, class... Args>
-    auto enqueue(F&& f, Args&&... args) -> std::future<std::result_of<F(Args...)>::type> {
+    auto enqueue(F&& f, Args&&... args)
+        -> std::future<typename std::result_of<F(Args...)>::type> {
+        
+        using return_type = typename std::result_of<F(Args...)>::type;
+
+        auto task = std::make_shared<std::packaged_task<return_type()>>(
+            std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+        );
+
+        std::future<return_type> res = task->get_future();
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
-            tasks.push(std::forward(f));
+            tasks.emplace([task]() { (*task)(); });
         }
         condition.notify_one();
+        return res;
     }
 
 private:
@@ -46,8 +56,7 @@ private:
                 std::unique_lock<std::mutex> lock(queue_mutex);
 
                 condition.wait(lock, [this]() {
-                    if (terminate || !tasks.empty())
-                        return;
+                    return terminate || !tasks.empty();
                 });
 
                 if (terminate && tasks.empty())
