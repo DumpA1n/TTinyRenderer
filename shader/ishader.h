@@ -1,9 +1,7 @@
 #pragma once
 
 #include "texture.h"
-#include "model.h"
 #include "mmath.h"
-#include "triangle.h"
 
 #include <string>
 #include <unordered_map>
@@ -41,6 +39,10 @@ class IShader {
 public:
     IShader() = default;
     virtual ~IShader() = default;
+
+    void initialize() {
+
+    }
 
     virtual vertex_shader_output_i vertex_shader(const vertex_shader_payload_i& payload) = 0;
     virtual fragment_shader_output_i fragment_shader(const fragment_shader_payload_i& payload) = 0;
@@ -116,5 +118,4 @@ private:
     Matrix4f view_matrix_;
     Matrix4f projection_matrix_;
     Matrix4f model_matrix_;
-
 };

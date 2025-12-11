@@ -11,6 +11,7 @@ public:
     unsigned char* source() const { return image_; }
     int width() const { return width_; }
     int height() const { return height_; }
+    int channels() const { return channels_; }
 
     Vector3f sampler2D(const float u, const float v) const;
     Vector3f sampler2D(const Vector2f uv) const;

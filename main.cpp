@@ -6,7 +6,7 @@
 #include "shader/texture_shader.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include "stb_image/stb_image_write.h"
 
 int WIDTH = 700;
 int HEIGHT = 700;
@@ -36,12 +36,14 @@ int main() {
         rst.add_texture("specular", new Texture(FilesDir + "models/african_head/african_head_spec.tga"));
         rst.add_texture("normal", new Texture(FilesDir + "models/african_head/african_head_nm_tangent.tga"));
         obj.load(FilesDir + "models/african_head/african_head.obj");
-    } else if (modelname == "spot") {
+    }
+    else if (modelname == "spot") {
         shader = new TextureShader();
         Texture texture(FilesDir + "models/spot/spot_texture.png");
         shader->add_texture("texture", texture);
         obj.load(FilesDir + "models/spot/spot_triangulated_good.obj");
-    } else if (modelname == "diablo3_pose") {
+    }
+    else if (modelname == "diablo3_pose") {
         shader = new TextureShader();
         Texture texture(FilesDir + "models/diablo3_pose/diablo3_pose_diffuse.tga");
         shader->add_texture("texture", texture);

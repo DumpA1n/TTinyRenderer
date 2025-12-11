@@ -15,7 +15,7 @@
 #include "rasterizer.h"
 #include "model.h"
 #include "utils.h"
-#include "mlog.h"
+#include "logger.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -93,5 +93,7 @@ elseif(BUILD_ANDROID_LIB)
 
     add_library(${CMAKE_PROJECT_NAME} SHARED ${SOURCES})
 
+    target_compile_definitions(${PROJECT_NAME} PRIVATE kANDROID_LOG)
+
     target_link_libraries(${CMAKE_PROJECT_NAME} android log)
 endif()
