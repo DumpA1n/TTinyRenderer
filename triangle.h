@@ -1,15 +1,14 @@
 #pragma once
 
-#include <vector>
+#include <array>
 
 #include "mmath.h"
-#include "texture.h"
 
 struct Triangle {
-    Vector4f vertices[3];   // v  顶点坐标
-    Vector2f tex_coords[3]; // vt 纹理坐标
-    Vector3f normals[3];    // vn 法线
-    Vector3f color[3];      // base color
+    std::array<Vector4f, 3> vertices;   // v  顶点坐标
+    std::array<Vector2f, 3> tex_coords; // vt 纹理坐标
+    std::array<Vector3f, 3> normals;    // vn 法线
+    std::array<Vector3f, 3> color;      // base color
     Triangle() {
         vertices[0] = Vector4f{0.0f, 0.0f, 0.0f, 1.0f};
         vertices[1] = Vector4f{0.0f, 0.0f, 0.0f, 1.0f};
@@ -18,13 +17,13 @@ struct Triangle {
         color[1] = Vector3f{1.0f};
         color[2] = Vector3f{1.0f};
     }
-    std::array<Vector2f, 3> toVector2f() {
+    std::array<Vector2f, 3> toVector2f() const {
         return { vertices[0].xy(), vertices[1].xy(), vertices[2].xy() };
     }
-    std::array<Vector3f, 3> toVector3f() {
+    std::array<Vector3f, 3> toVector3f() const {
         return { vertices[0].xyz(), vertices[1].xyz(), vertices[2].xyz() };
     }
-    std::array<Vector4f, 3> toVector4f() {
+    std::array<Vector4f, 3> toVector4f() const {
         return { vertices[0], vertices[1], vertices[2] };
     }
     void setVertices(int index, const Vector3f& v) {

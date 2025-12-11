@@ -1,13 +1,9 @@
 #include <iostream>
-#include <optional>
 
 #include "rasterizer.h"
 #include "model.h"
-#include "utils.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include "shader/default_shader.h"
+#include "shader/texture_shader.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -15,23 +11,11 @@
 int WIDTH = 700;
 int HEIGHT = 700;
 
-struct Shader {
-    Model* m;
-    std::vector<Triangle*> triangleList;
-    std::unordered_map<std::string, Texture*> textureMap;
-    Vector4f (*vertex_shader)(const vertex_shader_payload& payload);
-    Vector3f (*fragment_shader)(const fragment_shader_payload& payload);
-
-    Shader() {}
-};
-
 int main() {
     auto start = std::chrono::high_resolution_clock::now(); // 计算耗时
 
     Rasterizer rst(WIDTH, HEIGHT, 4);
     Model obj;
-
-    rst.set_vertex_shader((void*)&default_vertex_shader);
 
     std::string modelname = "spot";
 
@@ -43,30 +27,36 @@ int main() {
     std::string FilesDir = "../";
 #endif
 
+    IShader* shader = nullptr;
+
     if (modelname == "africa_head") {
-        rst.set_fragment_shader((void*)&african_head_fragment_shader);
+        shader = new DefaultShader();  // 可以创建专门的 AfricanHeadShader
         rst.add_texture("texture", new Texture(FilesDir + "models/african_head/african_head_SSS.jpg"));
         rst.add_texture("diffuse", new Texture(FilesDir + "models/african_head/african_head_diffuse.tga"));
         rst.add_texture("specular", new Texture(FilesDir + "models/african_head/african_head_spec.tga"));
         rst.add_texture("normal", new Texture(FilesDir + "models/african_head/african_head_nm_tangent.tga"));
         obj.load(FilesDir + "models/african_head/african_head.obj");
     } else if (modelname == "spot") {
-        rst.set_fragment_shader((void*)&phong_texture_fragment_shader);
-        rst.set_texture(new Texture(FilesDir + "models/spot/spot_texture.png"));
+        shader = new TextureShader();
+        Texture texture(FilesDir + "models/spot/spot_texture.png");
+        shader->add_texture("texture", texture);
         obj.load(FilesDir + "models/spot/spot_triangulated_good.obj");
     } else if (modelname == "diablo3_pose") {
-        rst.set_fragment_shader((void*)&phong_texture_fragment_shader);
-        rst.set_texture(new Texture(FilesDir + "models/diablo3_pose/diablo3_pose_diffuse.tga"));
+        shader = new TextureShader();
+        Texture texture(FilesDir + "models/diablo3_pose/diablo3_pose_diffuse.tga");
+        shader->add_texture("texture", texture);
         obj.load(FilesDir + "models/diablo3_pose/diablo3_pose.obj");
     }
 
-    std::vector<Triangle*> triangles;
+    rst.set_shader(shader);
+
+    std::vector<Triangle> triangles;
     for (int i = 0; i < obj.size(); i += 3) {
-        Triangle* tri = new Triangle();
+        Triangle tri;
         for (int j = 0; j < 3; j++) {
-            tri->setVertices(j, obj.getVertices(i + j));
-            tri->setTexCoords(j, obj.getTexCoords(i + j));
-            tri->setNormals(j, obj.getNormals(i + j));
+            tri.setVertices(j, obj.getVertices(i + j));
+            tri.setTexCoords(j, obj.getTexCoords(i + j));
+            tri.setNormals(j, obj.getNormals(i + j));
         }
         triangles.push_back(tri);
     }
@@ -85,7 +75,11 @@ int main() {
         Vector4f l1    = Vector4f{normalized(Vector3f{20, 20, 20}), 1};
         Vector4f l2    = Vector4f{normalized(Vector3f{-20, 20, 0}), 1};
         for (auto& it : {std::ref(zero), std::ref(xAxis), std::ref(yAxis), std::ref(zAxis), std::ref(l1), std::ref(l2)}) {
-            rst.vertex_shader({it, tmp, tmp});
+            if (shader) {
+                vertex_shader_payload_i vs_input{it, tmp};
+                auto vs_output = shader->vertex_shader(vs_input);
+                it.get() = vs_output.position;
+            }
             rst.ViewPort(it, WIDTH, HEIGHT);
         }
 
@@ -100,8 +94,10 @@ int main() {
         break;
     }
 
+    delete shader;
+
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
-    std::cout << "函数执行时间: " << elapsed.count() << " 毫秒\n";
+    std::cout << "Takes Time: " << elapsed.count() << " ms\n";
     return 0;
 }

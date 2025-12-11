@@ -1,14 +1,16 @@
 #include "rasterizer.h"
 
-#include <iostream>
+#include <array>
 #include <algorithm>
 #include <cmath> // round floor
+#include <cfloat> // FLT_MAX
 #include <future> // future
 
 #include "ThreadPool.h"
-#include "MyThreadPool.h"
+#include "mmath.h"
 
-Rasterizer::Rasterizer(int width, int height, int channels) {
+Rasterizer::Rasterizer(int width, int height, int channels)
+{
     this->width = width;
     this->height = height;
     this->channels = channels;
@@ -24,6 +26,26 @@ Rasterizer::Rasterizer(int width, int height, int channels) {
 
     depth_buffer_4x.resize(width * height);
     for (auto& it : depth_buffer_4x) { it.resize(4); }
+}
+
+void Rasterizer::initialize(int width, int height, int channels) {
+    this->width = width;
+    this->height = height;
+    this->channels = channels;
+
+    current_frame_buffer.resize(width * channels * height);
+
+    current_frame_buffer_4x.resize(width * height);
+    for (auto& it : current_frame_buffer_4x) { it.resize(4); }
+
+    last_frame_buffer.resize(width * channels * height);
+
+    depth_buffer.resize(width * height);
+
+    depth_buffer_4x.resize(width * height);
+    for (auto& it : depth_buffer_4x) { it.resize(4); }
+
+    
 }
 
 int Rasterizer::get_index(const int& x, const int& y) {
@@ -61,11 +83,8 @@ std::vector<uint8_t> Rasterizer::get_last_frame_buffer() {
     return last_frame_buffer;
 }
 
-void Rasterizer::set_vertex_shader(void* fn) {
-    *(void**)(&vertex_shader) = fn;
-}
-void Rasterizer::set_fragment_shader(void* fn) {
-    *(void**)(&fragment_shader) = fn;
+void Rasterizer::set_shader(IShader* shader) {
+    shader_ = shader;
 }
 void Rasterizer::set_texture(Texture* tex) {
     texture = tex;
@@ -74,15 +93,17 @@ void Rasterizer::add_texture(std::string name, Texture* texture) {
     textureMap.emplace(name, texture);
 }
 
-static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector4f* v){
+static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const std::array<Vector4f, 3>& v){
     float c1 = (x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*y + v[1].x*v[2].y - v[2].x*v[1].y) / (v[0].x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*v[0].y + v[1].x*v[2].y - v[2].x*v[1].y);
     float c2 = (x*(v[2].y - v[0].y) + (v[0].x - v[2].x)*y + v[2].x*v[0].y - v[0].x*v[2].y) / (v[1].x*(v[2].y - v[0].y) + (v[0].x - v[2].x)*v[1].y + v[2].x*v[0].y - v[0].x*v[2].y);
     float c3 = (x*(v[0].y - v[1].y) + (v[1].x - v[0].x)*y + v[0].x*v[1].y - v[1].x*v[0].y) / (v[2].x*(v[0].y - v[1].y) + (v[1].x - v[0].x)*v[2].y + v[0].x*v[1].y - v[1].x*v[0].y);
     return {c1,c2,c3};
 }
+
 inline static Vector3f interpolate(float alpha, float beta, float gamma, const Vector3f& vert1, const Vector3f& vert2, const Vector3f& vert3, float weight) {
     return (vert1 * alpha + vert2 * beta + vert3 * gamma) / weight;
 }
+
 inline static Vector2f interpolate(float alpha, float beta, float gamma, const Vector2f& vert1, const Vector2f& vert2, const Vector2f& vert3, float weight) {
     float u = (alpha * vert1.x + beta * vert2.x + gamma * vert3.x);
     float v = (alpha * vert1.y + beta * vert2.y + gamma * vert3.y);
@@ -90,24 +111,28 @@ inline static Vector2f interpolate(float alpha, float beta, float gamma, const V
     v /= weight;
     return Vector2f{u, v};
 }
-inline static Vector3f interpolate(float alpha, float beta, float gamma, const Vector3f* vert, float weight) {
+
+inline static Vector3f interpolate(float alpha, float beta, float gamma, const std::array<Vector3f, 3>& vert, float weight) {
     return (vert[0] * alpha + vert[1] * beta + vert[2] * gamma) / weight;
 }
-inline static Vector2f interpolate(float alpha, float beta, float gamma, const Vector2f* vert, float weight) {
+
+inline static Vector2f interpolate(float alpha, float beta, float gamma, const std::array<Vector2f, 3>& vert, float weight) {
     float u = (alpha * vert[0].x + beta * vert[1].x + gamma * vert[2].x);
     float v = (alpha * vert[0].y + beta * vert[1].y + gamma * vert[2].y);
     u /= weight;
     v /= weight;
     return Vector2f{u, v};
 }
-bool Rasterizer::isInsideTriangle2D(const Vector3f& p, Triangle* t) {
-    auto v = t->toVector3f().data();
+
+bool Rasterizer::isInsideTriangle2D(const Vector3f& p, const Triangle& t) {
+    auto v = t.toVector3f();
     float n1 = cross(v[1] - v[0], p - v[0]).z;
     float n2 = cross(v[2] - v[1], p - v[1]).z;
     float n3 = cross(v[0] - v[2], p - v[2]).z;
     return (n1 > 0 && n2 > 0 && n3 > 0) || (n1 < 0 && n2 < 0 && n3 < 0);
 }
-bool Rasterizer::isInsideTriangle2D(float x, float y, Triangle* t) {
+
+bool Rasterizer::isInsideTriangle2D(float x, float y, const Triangle& t) {
     return isInsideTriangle2D({x, y, 1.0f}, t);
 }
 
@@ -128,14 +153,14 @@ void Rasterizer::draw_line(const Vector2f& p1, const Vector2f& p2, const Vector3
         if (e2 < dx)  { err += dx; y1 += sy; }
     }
 }
-void Rasterizer::draw_triangle(Triangle* t, const Vector3f& col) {
-    auto v = t->toVector2f();
+void Rasterizer::draw_triangle(const Triangle& t, const Vector3f& col) {
+    auto v = t.toVector2f();
     draw_line(v[0], v[1], col);
     draw_line(v[1], v[2], col);
     draw_line(v[2], v[0], col);
 }
-void Rasterizer::draw_triangle_filled(Triangle* t, const Vector3f& col) {
-    auto v = t->toVector4f();
+void Rasterizer::draw_triangle_filled(const Triangle& t, const Vector3f& col) {
+    auto v = t.toVector4f();
     Vector2f bottomleft{std::min(std::min(v[0].x, v[1].x), v[2].x), std::min(std::min(v[0].y, v[1].y), v[2].y)};
     Vector2f topright{std::max(std::max(v[0].x, v[1].x), v[2].x), std::max(std::max(v[0].y, v[1].y), v[2].y)};
     for (int x = std::floor(bottomleft.x); x <= std::ceil(topright.x); x++) {
@@ -146,8 +171,8 @@ void Rasterizer::draw_triangle_filled(Triangle* t, const Vector3f& col) {
         }
     }
 }
-void Rasterizer::rasterize(Triangle* t, Vector3f* view_pos) {
-    auto v = t->toVector4f();
+void Rasterizer::rasterize(const Triangle& t, const std::array<Vector3f, 3>& view_pos) {
+    auto v = t.toVector4f();
 
     // bbox
     Vector2f bottomleft{std::min(std::min(v[0].x, v[1].x), v[2].x), std::min(std::min(v[0].y, v[1].y), v[2].y)};
@@ -157,78 +182,40 @@ void Rasterizer::rasterize(Triangle* t, Vector3f* view_pos) {
         for (int y = std::floor(bottomleft.y); y <= std::ceil(topright.y); y++) {
             if (x < 0 || x >= width || y < 0 || y >= height) { continue; }
 
-            static float AA4xSteps[4][2] = {
-                {0.25, 0.25},
-                {0.75, 0.25},
-                {0.25, 0.75},
-                {0.75, 0.75}
-            };
+            if (isInsideTriangle2D(x, y, t)) {
 
-            if (MSAA4x) {
-                bool need_sampler = false;
-                bool inside_sample[4] = {false};
-                for (int i = 0; i < 4; i++) {
-                    auto [sx, sy] = [&]() -> std::pair<float, float> { return {x + AA4xSteps[i][0], y + AA4xSteps[i][1]}; }();
-                    if (isInsideTriangle2D(sx, sy, t)) {
-                        auto[alpha, beta, gamma] = computeBarycentric2D(sx, sy, v.data());
-                        float Z = 1.0 / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w);
-                        float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w;
-                        zp *= Z;
-                        float& depth = depth_buffer_4x[y * width + x][i];
-                        if (zp < depth) {
-                            need_sampler = true;
-                            inside_sample[i] = true;
-                            depth = zp;
-                        }
+                // calc depth
+                auto[alpha, beta, gamma] = computeBarycentric2D(x, y, v);
+                float Z = 1.0 / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w);
+                float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w;
+                zp *= Z;
+
+                // depth test
+                if (zp < depth_buffer[y * width + x]) {
+                    // Triangle Barycentric Interpolation
+                    Vector3f interpolated_color = interpolate(alpha, beta, gamma, t.color, 1);
+                    Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t.normals, 1);
+                    Vector2f interpolated_texcoords = interpolate(alpha, beta, gamma, t.tex_coords, 1);
+                    Vector3f interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos, 1);
+
+                    fragment_shader_payload_i payload{
+                        .view_pos = interpolated_shadingcoords,
+                        .normal = interpolated_normal,
+                        .tex_coord = interpolated_texcoords,
+                        .color = interpolated_color,
+                    };
+
+                    if (shader_) {
+                        set_pixel(x, y, shader_->fragment_shader(payload).color);
                     }
-                    if (need_sampler) {
-                        auto[alpha, beta, gamma] = computeBarycentric2D(x, y, v.data());
-                        Vector3f interpolated_color = interpolate(alpha, beta, gamma, t->color, 1);
-                        Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals, 1);
-                        Vector2f interpolated_texcoords = interpolate(alpha, beta, gamma, t->tex_coords, 1);
-                        Vector3f interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos, 1);
 
-                        fragment_shader_payload payload({interpolated_color, interpolated_normal, interpolated_texcoords, texture, &textureMap});
-                        payload.view_pos = interpolated_shadingcoords;
-
-                        Vector3f gl_FragColor = fragment_shader(payload);
-
-                        for (int samp = 0; samp < 4; samp++) {
-                            if (inside_sample[samp]) {
-                                current_frame_buffer_4x[y * width + x][samp] = gl_FragColor;
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (isInsideTriangle2D(x, y, t)) {
-
-                    // calc depth
-                    auto[alpha, beta, gamma] = computeBarycentric2D(x, y, v.data());
-                    float Z = 1.0 / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w);
-                    float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w;
-                    zp *= Z;
-
-                    // depth test
-                    if (zp < depth_buffer[y * width + x]) {
-                        // Triangle Barycentric Interpolation
-                        Vector3f interpolated_color = interpolate(alpha, beta, gamma, t->color, 1);
-                        Vector3f interpolated_normal = interpolate(alpha, beta, gamma, t->normals, 1);
-                        Vector2f interpolated_texcoords = interpolate(alpha, beta, gamma, t->tex_coords, 1);
-                        Vector3f interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos, 1);
-
-                        fragment_shader_payload payload({interpolated_color, interpolated_normal, interpolated_texcoords, texture, &textureMap});
-                        payload.view_pos = interpolated_shadingcoords;
-
-                        set_pixel(x, y, fragment_shader(payload));
-
-                        depth_buffer[y * width + x] = zp;
-                    }
+                    depth_buffer[y * width + x] = zp;
                 }
             }
         }
     }
 }
+
 void Rasterizer::ViewPort(Vector4f& p, int w, int h) {
     float f1 = (50 - 0.1) / 2.0;
     float f2 = (50 + 0.1) / 2.0;
@@ -237,120 +224,70 @@ void Rasterizer::ViewPort(Vector4f& p, int w, int h) {
     p.z = p.z * f1 + f2;
 };
 
-void Rasterizer::draw(std::vector<Triangle*> triangles) {
-    angleY = ((int)angleY + 2) % 360;
+void Rasterizer::draw(const std::vector<Triangle>& triangles) {
     for (const auto& t : triangles) {
-        Triangle newTri = *t;
-        Vector3f view_pos[3];
+        Triangle vs_tri = t;
+        std::array<Vector3f, 3> view_pos;
+
+        for (int i = 0; i < 3; i++) {
+            vertex_shader_payload_i vs_input{
+                vs_tri.vertices[i],
+                vs_tri.normals[i]
+            };
+
+            if (!shader_) continue;
+            auto vs_output = shader_->vertex_shader(vs_input);
+
+            vs_tri.vertices[i] = vs_output.position;
+            vs_tri.normals[i] = vs_output.normal;
+            view_pos[i] = vs_output.view_pos;
+        }
 
         for (int i = 0; i < 3; i++)
-            vertex_shader({newTri.vertices[i], newTri.normals[i], view_pos[i]});
-
-        for (int i = 0; i < 3; i++)
-            ViewPort(newTri.vertices[i], width, height);
+            ViewPort(vs_tri.vertices[i], width, height);
 
         if (renderMode == TEXTURE_MODE)
-            rasterize(&newTri, view_pos);
-        else if (renderMode == LINE_FRAME_MODE)
-            draw_triangle(&newTri, Vector3f{1.0f});
-        else if (renderMode == PURE_COLOR_MODE)
-            draw_triangle_filled(&newTri, Vector3f{1.0f});
-    }
-
-    if (MSAA4x) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Vector3f accumulate_color;
-                for (int i = 0; i < 4; i++) {
-                    accumulate_color += current_frame_buffer_4x[y * width + x][i];
-                }
-                set_pixel(x, y, accumulate_color / 4.0f);
-            }
-        }
+            rasterize(vs_tri, view_pos);
     }
 }
 
-void Rasterizer::draw_multi_thread(std::vector<Triangle*> triangles) {
-    angleY = ((int)angleY + 2) % 360;
-
-    static MyThreadPool thread_pool(std::thread::hardware_concurrency());
+void Rasterizer::draw_multi_thread(const std::vector<Triangle>& triangles) {
+    static ThreadPool thread_pool(std::thread::hardware_concurrency());
     std::vector<std::future<void>> tasks;
 
     for (const auto& t : triangles) {
-        tasks.push_back(thread_pool.enqueue([=]() {
-            Triangle newTri = *t;
-            Vector3f view_pos[3];
+        tasks.push_back(thread_pool.enqueue([=, this]() {
+            Triangle newTri = t;
+            std::array<Vector3f, 3> view_pos;
 
-            for (int i = 0; i < 3; i++)
-                vertex_shader({newTri.vertices[i], newTri.normals[i], view_pos[i]});
+            for (int i = 0; i < 3; i++) {
+                vertex_shader_payload_i vs_input{
+                    newTri.vertices[i],
+                    newTri.normals[i]
+                };
+
+                if (!shader_) return;
+                auto vs_output = shader_->vertex_shader(vs_input);
+
+                newTri.vertices[i] = vs_output.position;
+                newTri.normals[i] = vs_output.normal;
+                view_pos[i] = vs_output.view_pos;
+            }
 
             for (int i = 0; i < 3; i++)
                 ViewPort(newTri.vertices[i], width, height);
 
             if (renderMode == TEXTURE_MODE)
-                rasterize(&newTri, view_pos);
+                rasterize(newTri, view_pos);
             else if (renderMode == LINE_FRAME_MODE)
-                draw_triangle(&newTri, Vector3f{1.0f});
+                draw_triangle(newTri, Vector3f{1.0f});
             else if (renderMode == PURE_COLOR_MODE)
-                draw_triangle_filled(&newTri, Vector3f{1.0f});
+                draw_triangle_filled(newTri, Vector3f{1.0f});
         }));
     }
 
     for (auto& t : tasks) t.get();
-
-    if (MSAA4x) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Vector3f accumulate_color;
-                for (int i = 0; i < 4; i++) {
-                    accumulate_color += current_frame_buffer_4x[y * width + x][i];
-                }
-                set_pixel(x, y, accumulate_color / 4.0f);
-            }
-        }
-    }
 }
-
-// void Rasterizer::draw_multi_thread(std::vector<Triangle*> triangles) {
-//     angleY = ((int)angleY + 2) % 360;
-
-//     static ThreadPool thread_pool(std::thread::hardware_concurrency());
-//     std::vector<std::future<void>> tasks;
-
-//     for (const auto& t : triangles) {
-//         tasks.push_back(thread_pool.enqueue([=]() {
-//             Triangle newTri = *t;
-//             Vector3f view_pos[3];
-
-//             for (int i = 0; i < 3; i++)
-//                 vertex_shader({newTri.vertices[i], newTri.normals[i], view_pos[i]});
-
-//             for (int i = 0; i < 3; i++)
-//                 ViewPort(newTri.vertices[i], width, height);
-
-//             if (renderMode == TEXTURE_MODE)
-//                 rasterize(&newTri, view_pos);
-//             else if (renderMode == LINE_FRAME_MODE)
-//                 draw_triangle(&newTri, Vector3f{1.0f});
-//             else if (renderMode == PURE_COLOR_MODE)
-//                 draw_triangle_filled(&newTri, Vector3f{1.0f});
-//         }));
-//     }
-
-//     for (auto& t : tasks) t.get();
-
-//     if (MSAA4x) {
-//         for (int y = 0; y < height; y++) {
-//             for (int x = 0; x < width; x++) {
-//                 Vector3f accumulate_color;
-//                 for (int i = 0; i < 4; i++) {
-//                     accumulate_color += current_frame_buffer_4x[y * width + x][i];
-//                 }
-//                 set_pixel(x, y, accumulate_color / 4.0f);
-//             }
-//         }
-//     }
-// }
 
 void Rasterizer::setRenderMode(enum RENDER_MODE mode) {
     this->renderMode = mode;

@@ -1,11 +1,10 @@
 #include "shader.h"
 #include "math.h"
 
-#include <iostream>
+#include <cmath>
 
-#define PI 3.14159265358979323846f
 inline float degrees_to_radians(float degree) {
-    return degree * (PI / 180.0f);
+    return degree * (M_PI / 180.0f);
 }
 
 Matrix4f get_model_matrix(const Vector3f& scale, const Vector3f& rotate, const Vector3f& translate) {

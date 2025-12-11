@@ -1,3 +1,5 @@
+#ifdef __ANDROID__
+
 #include <jni.h>
 #include <android/log.h>
 #include <android/native_window.h>
@@ -240,3 +242,5 @@ Java_com_example_tinyrenderer_NativeLib_setAAMode(JNIEnv *env, jobject thiz,
     bEnablFXAA = static_cast<bool>(b_fxaa);
     bEnablTAA = static_cast<bool>(b_taa);
 }
+
+#endif //__ANDROID__

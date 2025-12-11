@@ -145,8 +145,8 @@ struct vec<4, T> {
     vec(const vec<3, T>& v3, T w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
     inline T  operator[](int i) const { assert(i >= 0 && i < 4); return reinterpret_cast<const T*>(this)[i]; }
     inline T& operator[](int i)       { assert(i >= 0 && i < 4); return reinterpret_cast<      T*>(this)[i]; }
-    inline vec<2, T> xy() { return {x, y}; }
-    inline vec<3, T> xyz() { return {x, y, z}; }
+    inline vec<2, T> xy() const { return {x, y}; }
+    inline vec<3, T> xyz() const { return {x, y, z}; }
     inline const void* data() const { return reinterpret_cast<const void*>(this); }
     inline       void* data()       { return reinterpret_cast<      void*>(this); }
 #if defined (__aarch64__)
@@ -204,32 +204,6 @@ inline Vector3f cross(const Vector3f& v1, const Vector3f& v2) {
              v1.z*v2.x - v1.x*v2.z, 
              v1.x*v2.y - v1.y*v2.x };
 #endif
-}
-
-
-template<int n, int m, typename T>
-struct mat {
-    int ind = 0;
-    std::array<std::array<T, m>, n> _M;
-};
-
-template<int n, int m, typename T>
-void operator<<(mat<n, m, T>& _im, float _va) {
-    _im._M[_im.ind][_im.ind++] = _va;
-}
-
-template<int n, int m, typename T>
-mat<n, m, T> operator*(const mat<n, m, T>& m1, const mat<n, m, T>& m2) {
-    
-}
-
-using mat4f = mat<4, 4, float>;
-inline void mfun() {
-    mat4f m1;
-    m1 << 1, 0, 0, 0,
-          0, 1, 0, 0,
-          0, 0, 1, 0,
-          0, 0, 0, 1;
 }
 
 struct Matrix3f {

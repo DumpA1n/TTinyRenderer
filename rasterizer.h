@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mmath.h"
-#include "shader.h"
+#include "shader/ishader.h"
 #include "triangle.h"
 
 #include <vector>
@@ -20,6 +20,10 @@ public:
     int height;
     int channels;
 
+    Rasterizer(int width, int height, int stride);
+
+    void initialize(int width, int height, int stride);
+
     RENDER_MODE renderMode = TEXTURE_MODE;
     bool MSAA4x = true;
     bool SSAA4x = false;
@@ -30,8 +34,6 @@ public:
     std::vector<float> depth_buffer;
     std::vector<std::vector<float>> depth_buffer_4x;
 
-    Rasterizer(int width, int height, int stride);
-
     inline int get_index(const int& x, const int& y);
     inline void set_pixel(const Vector2i& p, const Vector3f& col);
     inline void set_pixel(int x, int y, const Vector3f& col);
@@ -39,27 +41,25 @@ public:
     std::vector<uint8_t> get_current_frame_buffer();
     std::vector<uint8_t> get_last_frame_buffer();
 
-    Vector4f (*vertex_shader)(const vertex_shader_payload& payload);
-    Vector3f (*fragment_shader)(const fragment_shader_payload& payload);
-    void set_vertex_shader(void* fn);
-    void set_fragment_shader(void* fn);
+    IShader* shader_ = nullptr;
+    void set_shader(IShader* shader);
 
     Texture* texture = nullptr;
     void set_texture(Texture* tex);
     std::unordered_map<std::string, Texture*> textureMap;
     void add_texture(std::string name, Texture* texture);
 
-    inline bool isInsideTriangle2D(const Vector3f& p, Triangle* t);
-    inline bool isInsideTriangle2D(float x, float y, Triangle* t);
+    bool isInsideTriangle2D(const Vector3f& p, const Triangle& t);
+    bool isInsideTriangle2D(float x, float y, const Triangle& t);
 
     void draw_line(const Vector2f& p1, const Vector2f& p2, const Vector3f& col);
-    void draw_triangle(Triangle* t, const Vector3f& col);
-    void draw_triangle_filled(Triangle* t, const Vector3f& col);
-    void rasterize(Triangle* t, Vector3f* view_pos);
+    void draw_triangle(const Triangle& t, const Vector3f& col);
+    void draw_triangle_filled(const Triangle& t, const Vector3f& col);
+    void rasterize(const Triangle& t, const std::array<Vector3f, 3>& view_pos);
     void ViewPort(Vector4f& p, int w, int h);
 
-    void draw(std::vector<Triangle*> triangles);
-    void draw_multi_thread(std::vector<Triangle*> triangles);
+    void draw(const std::vector<Triangle>& triangles);
+    void draw_multi_thread(const std::vector<Triangle>& triangles);
 
     void setRenderMode(enum RENDER_MODE mode);
     enum RENDER_MODE getRenderMode();
@@ -67,4 +67,5 @@ public:
     bool getMSAA4x();
     void setSSAA4x(bool state);
     bool getSSAA4x();
+
 };
