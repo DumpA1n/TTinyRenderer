@@ -12,7 +12,7 @@
 #include <thread>
 #include <queue>
 
-#include "rasterizer.h"
+#include "rasterizer/rasterizer.h"
 #include "model.h"
 #include "utils.h"
 #include "logger.h"

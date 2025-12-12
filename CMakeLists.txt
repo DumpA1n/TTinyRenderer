@@ -33,27 +33,48 @@ if(BUILD_EXECUTABLE)
         endif()
     endif()
 
-    file(GLOB SOURCES
-        ${CMAKE_SOURCE_DIR}/main.cpp
-        ${CMAKE_SOURCE_DIR}/rasterizer.cpp
-        ${CMAKE_SOURCE_DIR}/texture.cpp
-        ${CMAKE_SOURCE_DIR}/shader.cpp
-        ${CMAKE_SOURCE_DIR}/aarch64_neon.s
+    file(GLOB_RECURSE COMMON_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/object/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rasterizer/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/texture/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.cpp
     )
 
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+    file(GLOB SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+        ${COMMON_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s
+    )
+
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
 
     include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/ext
     )
 
     add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
 
-    set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
-    set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
-    set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
+    set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
+    set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
+    set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
+
+    # 定义资源目录
+    set(RESOURCE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    set(RESOURCE_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/output)
+
+    # 复制资源文件到输出目录
+    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${RESOURCE_SOURCE_DIR}/res
+            ${RESOURCE_OUTPUT_DIR}/res
+        COMMENT "Copying resource files to output directory"
+    )
 
 elseif(BUILD_ANDROID_LIB)
     # Android动态库编译模式
@@ -80,11 +101,11 @@ elseif(BUILD_ANDROID_LIB)
     endif()
 
     file(GLOB SOURCES
-        ${CMAKE_SOURCE_DIR}/tinyrenderer.cpp
-        ${CMAKE_SOURCE_DIR}/rasterizer.cpp
-        ${CMAKE_SOURCE_DIR}/texture.cpp
-        ${CMAKE_SOURCE_DIR}/shader.cpp
-        ${CMAKE_SOURCE_DIR}/aarch64_neon.s
+        ${CMAKE_CURRENT_SOURCE_DIR}/tinyrenderer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/rasterizer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/texture.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s
     )
 
     include_directories(

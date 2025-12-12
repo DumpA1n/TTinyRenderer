@@ -1,105 +1,64 @@
 #include <iostream>
+#include <memory>
 
-#include "rasterizer.h"
-#include "model.h"
-#include "shader/default_shader.h"
-#include "shader/texture_shader.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image/stb_image_write.h"
-
-int WIDTH = 700;
-int HEIGHT = 700;
+#include "object/object.h"
+#include "rasterizer/rasterizer.h"
+#include "scene/scene_manager.h"
+#include "shader/africahead_shader.h"
+#include "shader/phong_shader.h"
+#include "texture/texture_manager.h"
+#include "utils/logger.h"
+#include "utils/mmath.h"
 
 int main() {
+    SceneManager::GetInstance().initialize();
+    auto scene = SceneManager::GetInstance().get_scene("default");
+
+    scene->set_rasterizer(Rasterizer(700, 700, 4));
+
+    auto& texmgr = TextureManager::GetInstance();
+    texmgr.initialize();
+
+    ModelObject african_head("res/models/african_head/african_head.obj");
+    african_head.set_position({-1.0f, -1.0f, -1.0f});
+    african_head.set_rotation({0.0f, 10.0f, 0.0f});
+    african_head.set_scale({1.0f, 1.0f, 1.0f});
+    african_head.set_shader(std::make_unique<AfricaHeadShader>());
+    african_head.add_texture("texture", texmgr.get_texture("af_texture"));
+    african_head.add_texture("diffuse", texmgr.get_texture("af_diffuse"));
+    african_head.add_texture("specular", texmgr.get_texture("af_specular"));
+    african_head.add_texture("normal", texmgr.get_texture("af_normal"));
+
+    ModelObject spot("res/models/spot/spot_triangulated_good.obj");
+    spot.set_position({0.0f, 0.0f, 0.0f});
+    spot.set_rotation({0.0f, 160.0f, 0.0f});
+    spot.set_scale({1.0f, 1.0f, 1.0f});
+    spot.set_display_name("Spot");
+    spot.set_shader(std::make_unique<PhongShader>());
+    spot.add_texture("texture", texmgr.get_texture("spot_texture"));
+
+    ModelObject diablo3_pose("res/models/diablo3_pose/diablo3_pose.obj");
+    diablo3_pose.set_position({1.0f, 1.0f, 1.0f});
+    diablo3_pose.set_rotation({0.0f, 10.0f, 0.0f});
+    diablo3_pose.set_scale({1.0f, 1.0f, 1.0f});
+    diablo3_pose.set_display_name("Diablo3Pose");
+    diablo3_pose.set_shader(std::make_unique<PhongShader>());
+    diablo3_pose.add_texture("texture", texmgr.get_texture("diablo3_texture"));
+
+    scene->add_object(Eye(Vector3f{0, 0, 7}));
+    scene->add_object(Light(Vector3f{20, 20, 20}, Vector3f{500, 500, 500}));
+    scene->add_object(Light(Vector3f{-20, 20, 0}, Vector3f{500, 500, 500}));
+    scene->add_object(std::move(african_head));
+    scene->add_object(std::move(spot));
+    scene->add_object(std::move(diablo3_pose));
+
     auto start = std::chrono::high_resolution_clock::now(); // 计算耗时
 
-    Rasterizer rst(WIDTH, HEIGHT, 4);
-    Model obj;
-
-    std::string modelname = "spot";
-
-#if defined(_MSC_VER)
-    std::string FilesDir = "../../";
-#elif defined(__GNUC__) || defined(__clang__)
-    std::string FilesDir = "../";
-#else
-    std::string FilesDir = "../";
-#endif
-
-    IShader* shader = nullptr;
-
-    if (modelname == "africa_head") {
-        shader = new DefaultShader();  // 可以创建专门的 AfricanHeadShader
-        rst.add_texture("texture", new Texture(FilesDir + "models/african_head/african_head_SSS.jpg"));
-        rst.add_texture("diffuse", new Texture(FilesDir + "models/african_head/african_head_diffuse.tga"));
-        rst.add_texture("specular", new Texture(FilesDir + "models/african_head/african_head_spec.tga"));
-        rst.add_texture("normal", new Texture(FilesDir + "models/african_head/african_head_nm_tangent.tga"));
-        obj.load(FilesDir + "models/african_head/african_head.obj");
-    }
-    else if (modelname == "spot") {
-        shader = new TextureShader();
-        Texture texture(FilesDir + "models/spot/spot_texture.png");
-        shader->add_texture("texture", texture);
-        obj.load(FilesDir + "models/spot/spot_triangulated_good.obj");
-    }
-    else if (modelname == "diablo3_pose") {
-        shader = new TextureShader();
-        Texture texture(FilesDir + "models/diablo3_pose/diablo3_pose_diffuse.tga");
-        shader->add_texture("texture", texture);
-        obj.load(FilesDir + "models/diablo3_pose/diablo3_pose.obj");
-    }
-
-    rst.set_shader(shader);
-
-    std::vector<Triangle> triangles;
-    for (int i = 0; i < obj.size(); i += 3) {
-        Triangle tri;
-        for (int j = 0; j < 3; j++) {
-            tri.setVertices(j, obj.getVertices(i + j));
-            tri.setTexCoords(j, obj.getTexCoords(i + j));
-            tri.setNormals(j, obj.getNormals(i + j));
-        }
-        triangles.push_back(tri);
-    }
-
-    while (1) {
-        rst.clear_buffer({0.0f, 0.0f, 0.0f});
-
-        // rst.draw(triangles);
-        rst.draw_multi_thread(triangles);
-
-        Vector3f tmp;
-        Vector4f zero  = Vector4f{Vector3f{0, 0, 0}, 1};
-        Vector4f xAxis = Vector4f{normalized(Vector3f{1, 0, 0}), 1};
-        Vector4f yAxis = Vector4f{normalized(Vector3f{0, 1, 0}), 1};
-        Vector4f zAxis = Vector4f{normalized(Vector3f{0, 0, 1}), 1};
-        Vector4f l1    = Vector4f{normalized(Vector3f{20, 20, 20}), 1};
-        Vector4f l2    = Vector4f{normalized(Vector3f{-20, 20, 0}), 1};
-        for (auto& it : {std::ref(zero), std::ref(xAxis), std::ref(yAxis), std::ref(zAxis), std::ref(l1), std::ref(l2)}) {
-            if (shader) {
-                vertex_shader_payload_i vs_input{it, tmp};
-                auto vs_output = shader->vertex_shader(vs_input);
-                it.get() = vs_output.position;
-            }
-            rst.ViewPort(it, WIDTH, HEIGHT);
-        }
-
-        rst.draw_line(zero.xy(), xAxis.xy(), {1, 0, 0});
-        rst.draw_line(zero.xy(), yAxis.xy(), {0, 1, 0});
-        rst.draw_line(zero.xy(), zAxis.xy(), {0, 0, 1});
-
-        rst.draw_line(zero.xy(), l1.xy(), {0.5f, 0.5f, 0.5f});
-        rst.draw_line(zero.xy(), l2.xy(), {1, 1, 1});
-
-        stbi_write_png("out.png", WIDTH, HEIGHT, rst.channels, rst.get_current_frame_buffer().data(), 0);
-        break;
-    }
-
-    delete shader;
+    scene->tick();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
-    std::cout << "Takes Time: " << elapsed.count() << " ms\n";
+    LOGI("Takes Time: {} ms\n", elapsed.count());
+
     return 0;
 }
