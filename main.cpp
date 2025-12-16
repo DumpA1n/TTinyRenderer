@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <chrono>
 
 #include "object/object.h"
 #include "rasterizer/rasterizer.h"

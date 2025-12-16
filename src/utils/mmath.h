@@ -1,5 +1,7 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <iostream>
 #include <cstdint>
 #include <cmath>
@@ -8,6 +10,10 @@
 #include <stdexcept>
 #include <cassert>
 #include <limits>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #if defined(_MSC_VER)
     #define FORCEINLINE __forceinline

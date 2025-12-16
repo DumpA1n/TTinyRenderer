@@ -29,7 +29,7 @@ if(BUILD_EXECUTABLE)
         if(APPLE)
             add_link_options(-Wl,-dead_strip)
         else()
-            add_link_options(-Wl,--gc-sections -Wl,--strip-all -Wl,--exclude-libs,ALL)
+            add_link_options(-Wl,--gc-sections -Wl,--strip-all)
         endif()
     endif()
 
@@ -45,7 +45,7 @@ if(BUILD_EXECUTABLE)
     file(GLOB SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${COMMON_SOURCES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s
+        # ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s
     )
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
@@ -97,7 +97,7 @@ elseif(BUILD_ANDROID_LIB)
     # Optimization flags for smaller binary size
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_compile_options(-fvisibility=hidden -ffunction-sections -fdata-sections)
-        add_link_options(-Wl,--gc-sections -Wl,--strip-all -Wl,--exclude-libs,ALL)
+        add_link_options(-Wl,--gc-sections -Wl,--strip-all)
     endif()
 
     file(GLOB SOURCES

@@ -214,8 +214,8 @@ void Rasterizer::rasterize(const std::shared_ptr<Object> obj, const Triangle& t,
                     Vector3f interpolated_shadingcoords = Interpolate(alpha, beta, gamma, view_pos, 1);
 
                     fragment_shader_payload_i payload{
-                        .object = obj,
                         .scene = scene_,
+                        .object = obj,
                         .view_pos = interpolated_shadingcoords,
                         .normal = interpolated_normal,
                         .tex_coord = interpolated_texcoords,
