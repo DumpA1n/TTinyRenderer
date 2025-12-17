@@ -2,8 +2,6 @@
 
 #include <memory>
 #include <vector>
-#include <string>
-#include <unordered_map>
 
 #include "utils/mmath.h"
 #include "object/object.h"
@@ -40,6 +38,8 @@ public:
     void draw_triangle(const Triangle& t, const Vector3f& col);
     void draw_triangle_filled(const Triangle& t, const Vector3f& col);
 
+    void set_render_params(const RenderParams& params) { render_params_ = params; }
+
     int width()    const { return width_; }
     int height()   const { return height_; }
     int channels() const { return channels_; }
@@ -54,16 +54,8 @@ public:
     auto& get_current_frame_buffer() const { return current_frame_buffer_; }
     auto& get_last_frame_buffer() const { return last_frame_buffer_; }
 
-    auto& shaders() const { return shaders_; }
-    void add_shader(std::string name, std::unique_ptr<IShader> shader) { shaders_.emplace(name, std::move(shader)); }
-
-    auto& textures() const { return textures_; }
-    void add_texture(std::string name, std::unique_ptr<Texture> texture) { textures_.emplace(name, std::move(texture)); }
-
     auto scene() const { return scene_; }
-    void set_scene(std::shared_ptr<Scene> scene) { scene_ = scene; }
-
-    void set_render_params(const RenderParams& params) { render_params_ = params; }
+    void set_scene(const std::shared_ptr<Scene> scene) { scene_ = scene; }
 
     auto& get_model_matrix() { return model_matrix_; }
     void  set_model_matrix(const Vector3f& scale, const Vector3f& rotate, const Vector3f& translate);
@@ -93,9 +85,6 @@ private:
     int channels_;
 
     std::shared_ptr<Scene> scene_ = nullptr;
-
-    std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
-    std::unordered_map<std::string, std::shared_ptr<IShader>> shaders_;
 
     std::vector<uint8_t> current_frame_buffer_;
     std::vector<std::vector<Vector3f>> current_frame_buffer_4x_;

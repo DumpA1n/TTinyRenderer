@@ -16,8 +16,8 @@ int main() {
 
     scene->set_rasterizer(Rasterizer(700, 700, 4));
 
+    TextureManager::GetInstance().initialize();
     auto& texmgr = TextureManager::GetInstance();
-    texmgr.initialize();
 
     ModelObject african_head("res/models/african_head/african_head.obj");
     african_head.set_position({-1.0f, -1.0f, -1.0f});

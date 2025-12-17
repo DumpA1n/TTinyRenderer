@@ -25,6 +25,7 @@ public:
 
         auto ptr = std::make_shared<std::decay_t<T>>(std::forward<T>(obj));
 
+        // Key steps: load -> categorize -> store
         ptr->load();
 
         if (ptr->template is_a<Camera>()) {
