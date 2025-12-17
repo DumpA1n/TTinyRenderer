@@ -13,23 +13,38 @@ if(BUILD_EXECUTABLE)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
 
-    enable_language(ASM)
+    # Enable ASM only for ARM64 architectures
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)")
+        enable_language(ASM)
+    endif()
 
-    add_compile_options(-w)
+    # Compiler-specific warning suppression
+    # if(MSVC)
+    #     add_compile_options(/W0)
+    # else()
+    #     add_compile_options(-w)
+    # endif()
 
     # Build type
     if(NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE Release)
     endif()
 
-    # Optimization flags for smaller binary size
+    # Compiler and platform-specific optimization flags for smaller binary size
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        add_compile_options(-fvisibility=hidden -ffunction-sections -fdata-sections)
-        # Platform-specific linker flags
-        if(APPLE)
-            add_link_options(-Wl,-dead_strip)
+        if(MSVC)
+            # MSVC-specific flags
+            add_compile_options(/O2 /GL)
+            add_link_options(/LTCG /OPT:REF /OPT:ICF)
         else()
-            add_link_options(-Wl,--gc-sections -Wl,--strip-all -Wl,--exclude-libs,ALL)
+            # GCC/Clang-specific flags
+            add_compile_options(-fvisibility=hidden -ffunction-sections -fdata-sections)
+            # Platform-specific linker flags
+            if(APPLE)
+                add_link_options(-Wl,-dead_strip)
+            else()
+                add_link_options(-Wl,--gc-sections -Wl,--strip-all -Wl,--exclude-libs,ALL)
+            endif()
         endif()
     endif()
 
@@ -42,11 +57,13 @@ if(BUILD_EXECUTABLE)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.cpp
     )
 
-    file(GLOB SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-        ${COMMON_SOURCES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s
-    )
+    # Main sources
+    set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${COMMON_SOURCES})
+
+    # Add NEON assembly only for ARM64 architectures
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)")
+        list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s)
+    endif()
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
@@ -84,8 +101,11 @@ elseif(BUILD_ANDROID_LIB)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
-
-    enable_language(ASM)
+    
+    # Enable ASM only for ARM64 architectures
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)")
+        enable_language(ASM)
+    endif()
 
     add_compile_options(-w)
 
@@ -100,13 +120,18 @@ elseif(BUILD_ANDROID_LIB)
         add_link_options(-Wl,--gc-sections -Wl,--strip-all -Wl,--exclude-libs,ALL)
     endif()
 
-    file(GLOB SOURCES
+    # Android library sources
+    set(SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/tinyrenderer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/rasterizer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/texture.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/shader.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s
     )
+
+    # Add NEON assembly only for ARM64 architectures
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)")
+        list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/aarch64_neon.s)
+    endif()
 
     include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -118,3 +143,4 @@ elseif(BUILD_ANDROID_LIB)
 
     target_link_libraries(${CMAKE_PROJECT_NAME} android log)
 endif()
+
