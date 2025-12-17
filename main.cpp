@@ -45,7 +45,7 @@ int main() {
     diablo3_pose.set_shader(std::make_unique<PhongShader>());
     diablo3_pose.add_texture("texture", texmgr.get_texture("diablo3_texture"));
 
-    scene->add_object(Eye(Vector3f{0, 0, 7}));
+    scene->add_object(Camera(Vector3f{0, 0, 7}));
     scene->add_object(Light(Vector3f{20, 20, 20}, Vector3f{500, 500, 500}));
     scene->add_object(Light(Vector3f{-20, 20, 0}, Vector3f{500, 500, 500}));
     scene->add_object(std::move(african_head));

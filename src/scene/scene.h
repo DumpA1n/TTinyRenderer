@@ -1,6 +1,6 @@
 #pragma once
 
-#include "object/eye.h"
+#include "object/camera.h"
 #include "object/object.h"
 #include "rasterizer/rasterizer.h"
 #include <memory>
@@ -27,8 +27,8 @@ public:
 
         ptr->load();
 
-        if (ptr->template is_a<Eye>()) {
-            eye_ = std::dynamic_pointer_cast<Eye>(ptr);
+        if (ptr->template is_a<Camera>()) {
+            camera_ = std::dynamic_pointer_cast<Camera>(ptr);
         }
         else if (ptr->template is_a<Light>()) {
             lights_.push_back(std::dynamic_pointer_cast<Light>(ptr));
@@ -42,7 +42,7 @@ public:
 
     auto& objects() const { return objects_; }
     auto& lights() const { return lights_; }
-    auto& eye() const { return eye_; }
+    auto& camera() const { return camera_; }
 
 private:
     std::shared_ptr<Rasterizer> rasterizer_ = nullptr;
@@ -50,5 +50,5 @@ private:
     std::vector<std::shared_ptr<Object>> all_objects_;
     std::vector<std::shared_ptr<Object>> objects_;
     std::vector<std::shared_ptr<Light>> lights_;
-    std::shared_ptr<Eye> eye_;
+    std::shared_ptr<Camera> camera_;
 };

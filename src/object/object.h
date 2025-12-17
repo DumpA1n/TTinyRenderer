@@ -107,8 +107,6 @@ public:
 
     virtual void load() override {
         ModelObject::load();
-
-        
     }
 };
 
