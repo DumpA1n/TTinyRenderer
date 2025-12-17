@@ -6,7 +6,7 @@ class DefaultShader : public IShader {
 public:
     DefaultShader() = default;
 
-    virtual vertex_shader_output_i vertex_shader(const vertex_shader_payload_i& payload) override {
+    virtual vertex_shader_output vertex_shader(const vertex_shader_payload& payload) override {
         float angleY = -25.0f;
         Vector3f angle{5.0f, angleY, 0.0f};
         Vector3f eye_pos{0.0f, 0.0f, 3.0f};
@@ -14,7 +14,7 @@ public:
         Matrix4f mvp = payload.projection * payload.view * payload.model;
         Matrix4f viewmodel = payload.view * payload.model;
 
-        vertex_shader_output_i output;
+        vertex_shader_output output;
 
         // Compute view position
         output.view_pos = (viewmodel * payload.position).xyz();
@@ -33,12 +33,11 @@ public:
         return output;
     }
 
-    virtual fragment_shader_output_i fragment_shader(const fragment_shader_payload_i& payload) override {
-        fragment_shader_output_i output;
+    virtual fragment_shader_output fragment_shader(const fragment_shader_payload& payload) override {
+        fragment_shader_output output;
 
         output.color = payload.color;
 
         return output;
     }
-
 };

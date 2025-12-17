@@ -16,6 +16,9 @@ Texture::Texture(const std::string& filename)
 
 Vector3f Texture::sampler2D(const float u, const float v) const
 {
+    if (image_ == nullptr) {
+        return Vector3f{0.0f, 0.0f, 0.0f};
+    }
     int tex_x = std::clamp(static_cast<int>(u * width_), 0, width_ - 1);
     int tex_y =  std::clamp(static_cast<int>(v * height_), 0, height_ - 1);
     int index = (tex_y * width_ + tex_x) * channels_;
@@ -28,6 +31,9 @@ Vector3f Texture::sampler2D(const float u, const float v) const
 
 Vector3f Texture::sampler2D(const Vector2f uv) const
 {
+    if (image_ == nullptr) {
+        return Vector3f{0.0f, 0.0f, 0.0f};
+    }
     int tex_x = std::clamp(static_cast<int>(uv.x * width_), 0, width_ - 1);
     int tex_y =  std::clamp(static_cast<int>(uv.y * height_), 0, height_ - 1);
     int index = (tex_y * width_ + tex_x) * channels_;

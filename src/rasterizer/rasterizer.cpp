@@ -105,6 +105,14 @@ void Rasterizer::set_projection_matrix(float eye_fov, float aspect_ratio, float 
     };
 }
 
+void Rasterizer::ViewPort(Vector4f& p, int w, int h) {
+    float f1 = (50 - 0.1) / 2.0;
+    float f2 = (50 + 0.1) / 2.0;
+    p.x = w*0.5f*(p.x+1.0f);
+    p.y = h*(1.0f - 0.5f*(p.y+1.0f));
+    p.z = p.z * f1 + f2;
+}
+
 std::tuple<float, float, float> Rasterizer::ComputeBarycentric2D(float x, float y, const std::array<Vector4f, 3>& v) {
     float c1 = (x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*y + v[1].x*v[2].y - v[2].x*v[1].y) / (v[0].x*(v[1].y - v[2].y) + (v[2].x - v[1].x)*v[0].y + v[1].x*v[2].y - v[2].x*v[1].y);
     float c2 = (x*(v[2].y - v[0].y) + (v[0].x - v[2].x)*y + v[2].x*v[0].y - v[0].x*v[2].y) / (v[1].x*(v[2].y - v[0].y) + (v[0].x - v[2].x)*v[1].y + v[2].x*v[0].y - v[0].x*v[2].y);
@@ -213,7 +221,7 @@ void Rasterizer::rasterize(const std::shared_ptr<Object> obj, const Triangle& t,
                     Vector2f interpolated_texcoords = Interpolate(alpha, beta, gamma, t.tex_coords, 1);
                     Vector3f interpolated_shadingcoords = Interpolate(alpha, beta, gamma, view_pos, 1);
 
-                    fragment_shader_payload_i payload{
+                    fragment_shader_payload payload{
                         .object = obj,
                         .scene = scene_,
                         .view_pos = interpolated_shadingcoords,
@@ -233,18 +241,10 @@ void Rasterizer::rasterize(const std::shared_ptr<Object> obj, const Triangle& t,
     }
 }
 
-void Rasterizer::ViewPort(Vector4f& p, int w, int h) {
-    float f1 = (50 - 0.1) / 2.0;
-    float f2 = (50 + 0.1) / 2.0;
-    p.x = w*0.5f*(p.x+1.0f);
-    p.y = h*(1.0f - 0.5f*(p.y+1.0f));
-    p.z = p.z * f1 + f2;
-}
-
 void Rasterizer::run() {
     for (const auto& obj : scene_->objects()) {
         set_model_matrix(obj->position(), obj->rotation(), obj->scale());
-        set_view_matrix(scene_->eye()->position());
+        set_view_matrix(scene_->camera()->position());
         set_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f);
 
         for (const auto& t : obj->triangles()) {
@@ -252,7 +252,7 @@ void Rasterizer::run() {
             std::array<Vector3f, 3> view_pos;
 
             for (int i = 0; i < 3; i++) {
-                vertex_shader_payload_i vs_input{
+                vertex_shader_payload vs_input{
                     .object = obj,
                     .position = vs_tri.vertices[i],
                     .normal = vs_tri.normals[i],
@@ -290,7 +290,7 @@ void Rasterizer::run_multi_thread() {
                 std::array<Vector3f, 3> view_pos;
 
                 for (int i = 0; i < 3; i++) {
-                    vertex_shader_payload_i vs_input{
+                    vertex_shader_payload vs_input{
                         .object = obj,
                         .position = newTri.vertices[i],
                         .normal = newTri.normals[i],
