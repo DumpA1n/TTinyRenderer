@@ -223,7 +223,7 @@ void Rasterizer::rasterize(const std::shared_ptr<Object> obj, const Triangle& t,
 
                     fragment_shader_payload payload{
                         .object = obj,
-                        .scene = scene_,
+                        .scene = scene(),
                         .view_pos = interpolated_shadingcoords,
                         .normal = interpolated_normal,
                         .tex_coord = interpolated_texcoords,
@@ -242,39 +242,44 @@ void Rasterizer::rasterize(const std::shared_ptr<Object> obj, const Triangle& t,
 }
 
 void Rasterizer::run() {
-    for (const auto& obj : scene_->objects()) {
-        set_model_matrix(obj->position(), obj->rotation(), obj->scale());
-        set_view_matrix(scene_->camera()->position());
-        set_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f);
+    Matrix4f view_mat = (set_view_matrix(scene()->camera()->position()), get_view_matrix());
+    Matrix4f proj_mat = (set_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f), get_projection_matrix());
+
+    for (const auto& obj : scene()->objects()) {
+        Matrix4f model_mat = (set_model_matrix(obj->position(), obj->rotation(), obj->scale()), get_model_matrix());
 
         for (const auto& t : obj->triangles()) {
-            Triangle vs_tri = t;
-            std::array<Vector3f, 3> view_pos;
+            auto task = [&]() {
+                Triangle vs_tri = t;
+                std::array<Vector3f, 3> view_pos;
 
-            for (int i = 0; i < 3; i++) {
-                vertex_shader_payload vs_input{
-                    .object = obj,
-                    .position = vs_tri.vertices[i],
-                    .normal = vs_tri.normals[i],
-                    .model = get_model_matrix(),
-                    .view = get_view_matrix(),
-                    .projection = get_projection_matrix()
-                };
+                for (int i = 0; i < 3; i++) {
+                    vertex_shader_payload vs_input{
+                        .object = obj,
+                        .position = vs_tri.vertices[i],
+                        .normal = vs_tri.normals[i],
+                        .model = model_mat,
+                        .view = view_mat,
+                        .projection = proj_mat
+                    };
 
-                if (auto shader = obj->shader(); shader != nullptr) {
-                    auto vs_output = shader->vertex_shader(vs_input);
+                    if (auto shader = obj->shader(); shader != nullptr) {
+                        auto vs_output = shader->vertex_shader(vs_input);
 
-                    vs_tri.vertices[i] = vs_output.position;
-                    vs_tri.normals[i] = vs_output.normal;
-                    view_pos[i] = vs_output.view_pos;
+                        vs_tri.vertices[i] = vs_output.position;
+                        vs_tri.normals[i] = vs_output.normal;
+                        view_pos[i] = vs_output.view_pos;
+                    }
                 }
-            }
 
-            for (int i = 0; i < 3; i++)
-                ViewPort(vs_tri.vertices[i], width_, height_);
+                for (int i = 0; i < 3; i++)
+                    ViewPort(vs_tri.vertices[i], width_, height_);
 
-            if (render_params_.render_mode == TEXTURE_MODE)
-                rasterize(obj, vs_tri, view_pos);
+                if (render_params_.render_mode == TEXTURE_MODE)
+                    rasterize(obj, vs_tri, view_pos);
+            };
+
+            task();
         }
     }
 }
@@ -283,40 +288,53 @@ void Rasterizer::run_multi_thread() {
     static ThreadPool thread_pool(std::thread::hardware_concurrency());
     std::vector<std::future<void>> tasks;
 
-    for (const auto& obj : scene_->objects()) {
-        for (const auto& t : obj->triangles()) {
-            tasks.push_back(thread_pool.enqueue([this, &obj, &t]() {
-                Triangle newTri = t;
-                std::array<Vector3f, 3> view_pos;
+    Matrix4f view_mat = (set_view_matrix(scene()->camera()->position()), get_view_matrix());
+    Matrix4f proj_mat = (set_projection_matrix(45.0f, 1.0f, 0.1f, 50.0f), get_projection_matrix());
 
-                for (int i = 0; i < 3; i++) {
-                    vertex_shader_payload vs_input{
-                        .object = obj,
-                        .position = newTri.vertices[i],
-                        .normal = newTri.normals[i],
-                        .model = get_model_matrix(),
-                        .view = get_view_matrix(),
-                        .projection = get_projection_matrix()
-                    };
+    for (const auto& obj : scene()->objects()) {
+        Matrix4f model_mat = (set_model_matrix(obj->position(), obj->rotation(), obj->scale()), get_model_matrix());
 
-                    if (auto shader = obj->shader(); shader != nullptr) {
-                        auto vs_output = shader->vertex_shader(vs_input);
+        const auto& triangles = obj->triangles();
+        const size_t total = triangles.size();
+        const size_t batch_size = std::max(size_t(1), total / (std::thread::hardware_concurrency() * 2));
 
-                        newTri.vertices[i] = vs_output.position;
-                        newTri.normals[i] = vs_output.normal;
-                        view_pos[i] = vs_output.view_pos;
+        for (size_t start = 0; start < total; start += batch_size) {
+            size_t end = std::min(start + batch_size, total);
+
+            tasks.push_back(thread_pool.enqueue([this, &obj, &triangles, start, end, model_mat, view_mat, proj_mat]() {
+                for (size_t idx = start; idx < end; idx++) {
+                    Triangle vs_tri = triangles[idx];
+                    std::array<Vector3f, 3> view_pos;
+
+                    for (int i = 0; i < 3; i++) {
+                        vertex_shader_payload vs_input{
+                            .object = obj,
+                            .position = vs_tri.vertices[i],
+                            .normal = vs_tri.normals[i],
+                            .model = model_mat,
+                            .view = view_mat,
+                            .projection = proj_mat
+                        };
+
+                        if (auto shader = obj->shader(); shader != nullptr) {
+                            auto vs_output = shader->vertex_shader(vs_input);
+
+                            vs_tri.vertices[i] = vs_output.position;
+                            vs_tri.normals[i] = vs_output.normal;
+                            view_pos[i] = vs_output.view_pos;
+                        }
                     }
+
+                    for (int i = 0; i < 3; i++)
+                        ViewPort(vs_tri.vertices[i], width_, height_);
+
+                    if (render_params_.render_mode == TEXTURE_MODE)
+                        rasterize(obj, vs_tri, view_pos);
+                    else if (render_params_.render_mode == LINE_FRAME_MODE)
+                        draw_triangle(vs_tri, Vector3f{1.0f});
+                    else if (render_params_.render_mode == PURE_COLOR_MODE)
+                        draw_triangle_filled(vs_tri, Vector3f{1.0f});
                 }
-
-                for (int i = 0; i < 3; i++)
-                    ViewPort(newTri.vertices[i], width_, height_);
-
-                if (render_params_.render_mode == TEXTURE_MODE)
-                    rasterize(obj, newTri, view_pos);
-                else if (render_params_.render_mode == LINE_FRAME_MODE)
-                    draw_triangle(newTri, Vector3f{1.0f});
-                else if (render_params_.render_mode == PURE_COLOR_MODE)
-                    draw_triangle_filled(newTri, Vector3f{1.0f});
             }));
         }
     }

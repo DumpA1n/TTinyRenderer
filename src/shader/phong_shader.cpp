@@ -15,7 +15,7 @@ fragment_shader_output PhongShader::fragment_shader(const fragment_shader_payloa
     Vector3f ks{0.7937, 0.7937, 0.7937};
 
     Vector3f amb_light_intensity{10, 10, 10};
-    Vector3f eye_pos{0, 0, 10};
+    Vector3f eye_pos = payload.scene->camera()->position();
 
     float p = 150;
 

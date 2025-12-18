@@ -6,7 +6,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "utils/mmath.h"
+#include "mmath.h"
 
 class Model {
 private:

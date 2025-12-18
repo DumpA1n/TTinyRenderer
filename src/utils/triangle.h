@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "utils/mmath.h"
+#include "mmath.h"
 
 struct Triangle {
     std::array<Vector4f, 3> vertices;   // v  顶点坐标

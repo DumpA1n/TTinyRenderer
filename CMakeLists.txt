@@ -49,6 +49,7 @@ if(BUILD_EXECUTABLE)
     endif()
 
     file(GLOB_RECURSE COMMON_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/object/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/rasterizer/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/*.cpp

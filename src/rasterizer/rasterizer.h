@@ -3,9 +3,10 @@
 #include <memory>
 #include <vector>
 
-#include "utils/mmath.h"
 #include "object/object.h"
-#include "object/triangle.h"
+#include "utils/ThreadPool.h"
+#include "utils/mmath.h"
+#include "utils/triangle.h"
 
 class Texture;
 class IShader;
@@ -23,6 +24,7 @@ public:
         ERenderMode render_mode = TEXTURE_MODE;
         bool msaa4x = true;
         bool ssaa4x = false;
+        bool multi_thread = false;
     };
 
     Rasterizer(int width, int height, int channels);

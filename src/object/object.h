@@ -5,16 +5,18 @@
 #include <unordered_map>
 #include <vector>
 
-#include "model.h"
-#include "triangle.h"
 #include "utils/mmath.h"
-#include "texture/texture.h"
+#include "utils/model.h"
+#include "utils/triangle.h"
 #include "shader/ishader.h"
+#include "texture/texture.h"
 
 class Scene;
 
 class Object : public std::enable_shared_from_this<Object> {
 public:
+    using Ptr = std::shared_ptr<Object>;
+
     Object(const Vector3f& pos = {0, 0, 0}, const Vector3f& rot = {0, 0, 0}, const Vector3f& s = {1, 1, 1})
         : position_(pos), rotation_(rot), scale_(s) {}
 
@@ -30,6 +32,7 @@ public:
 
     template<class T>
     bool is_a() {
+        assert(!weak_from_this().expired() && "Object must be managed by shared_ptr");
         return std::dynamic_pointer_cast<T>(shared_from_this()) != nullptr;
     }
 
@@ -73,7 +76,9 @@ private:
 
 class ModelObject : public Object {
 public:
-    ModelObject(const std::string& model_path) : model_path_(model_path) {}
+    using Ptr = std::shared_ptr<ModelObject>;
+
+    explicit ModelObject(const std::string& model_path) : model_path_(model_path) {}
 
     virtual std::string name() override { return "Model"; }
 
@@ -101,7 +106,9 @@ private:
 
 class AfricaHeadObject : public ModelObject {
 public:
-    AfricaHeadObject(const std::string& model_path) : ModelObject(model_path) {}
+    using Ptr = std::shared_ptr<AfricaHeadObject>;
+
+    explicit AfricaHeadObject(const std::string& model_path) : ModelObject(model_path) {}
 
     std::string name() override { return "AfricaHead"; }
 
@@ -112,7 +119,9 @@ public:
 
 class Light : public Object {
 public:
-    Light(const Vector3f& pos, const Vector3f& intens)
+    using Ptr = std::shared_ptr<Light>;
+
+    explicit Light(const Vector3f& pos, const Vector3f& intens)
         : Object(pos), intensity_(intens) {}
 
     std::string name() override { return "Light"; }
