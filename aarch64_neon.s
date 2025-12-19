@@ -2,7 +2,7 @@
     .text
     .cpu generic+fp+simd
 
-// void _cross_neon(Vector3f* result, const Vector3f* v1, const Vector3f* v2)
+// void _cross_neon(float* result, const float* v1, const float* v2)
 _cross_neon:
     ld1     {v0.4s}, [x1]        // v0 = {x1, y1, z1, ?}
     ins     v0.s[3], wzr         // v0 = {x1, y1, z1, 0}
