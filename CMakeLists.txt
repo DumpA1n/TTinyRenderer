@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.22.1)
 # 编译选项：BUILD_EXECUTABLE用于可执行文件编译，BUILD_ANDROID_LIB用于Android动态库编译
 option(BUILD_EXECUTABLE "Build executable for Win/Mac/Linux/Android" ON)
 option(BUILD_ANDROID_LIB "Build shared library for Android App" OFF)
+option(SIMDON "Enable SIMD optimizations" OFF)
 
 if(BUILD_EXECUTABLE)
     # 可执行文件编译模式 (Win/Mac/Linux/Android)
@@ -82,6 +83,10 @@ if(BUILD_EXECUTABLE)
     set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
     set_target_properties(${PROJECT_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output)
 
+    if(SIMDON)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE kSIMDON)
+    endif()
+
     # 定义资源目录
     set(RESOURCE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     set(RESOURCE_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/output)
@@ -141,6 +146,9 @@ elseif(BUILD_ANDROID_LIB)
     add_library(${CMAKE_PROJECT_NAME} SHARED ${SOURCES})
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE kANDROID_LOG)
+    if(SIMDON)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE kSIMDON)
+    endif()
 
     target_link_libraries(${CMAKE_PROJECT_NAME} android log)
 endif()

@@ -40,8 +40,8 @@ fragment_shader_output AfricaHeadShader::fragment_shader(const fragment_shader_p
     Vector3f view_dir = normalized(eye_pos - point);
     Vector3f half_vector = normalized(light_dir + view_dir);
 
-    float diff = std::max(normal * light_dir, 0.0f);
-    float spec = std::pow(std::max(normal * half_vector, 0.0f), p);
+    float diff = std::max(dot(normal, light_dir), 0.0f);
+    float spec = std::pow(std::max(dot(normal, half_vector), 0.0f), p);
 
     Vector3f ambient = kd * 0.15f;
     Vector3f diffuse_component = kd * diff;

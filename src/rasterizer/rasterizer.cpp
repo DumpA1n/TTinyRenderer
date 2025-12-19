@@ -87,9 +87,9 @@ void Rasterizer::set_view_matrix(const Vector3f& eye_pos) {
     Vector3f y_axis = cross(z_axis, x_axis);
 
     view_matrix_ = Matrix4f{
-        x_axis.x, x_axis.y, x_axis.z, -(x_axis * eye_pos),
-        y_axis.x, y_axis.y, y_axis.z, -(y_axis * eye_pos),
-        z_axis.x, z_axis.y, z_axis.z, -(z_axis * eye_pos),
+        x_axis.x, x_axis.y, x_axis.z, -dot(x_axis, eye_pos),
+        y_axis.x, y_axis.y, y_axis.z, -dot(y_axis, eye_pos),
+        z_axis.x, z_axis.y, z_axis.z, -dot(z_axis, eye_pos),
         0,        0,        0,        1
     };
 }
@@ -270,10 +270,9 @@ void Rasterizer::run() {
                         vs_tri.normals[i] = vs_output.normal;
                         view_pos[i] = vs_output.view_pos;
                     }
-                }
 
-                for (int i = 0; i < 3; i++)
                     ViewPort(vs_tri.vertices[i], width_, height_);
+                }
 
                 if (render_params_.render_mode == TEXTURE_MODE)
                     rasterize(obj, vs_tri, view_pos);
@@ -323,10 +322,9 @@ void Rasterizer::run_multi_thread() {
                             vs_tri.normals[i] = vs_output.normal;
                             view_pos[i] = vs_output.view_pos;
                         }
-                    }
 
-                    for (int i = 0; i < 3; i++)
                         ViewPort(vs_tri.vertices[i], width_, height_);
+                    }
 
                     if (render_params_.render_mode == TEXTURE_MODE)
                         rasterize(obj, vs_tri, view_pos);

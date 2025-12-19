@@ -33,9 +33,9 @@ fragment_shader_output PhongShader::fragment_shader(const fragment_shader_payloa
         float r2 = squaredNorm(light->position() - point);
         Vector3f h = normalized(eye_dir + light_dir);
 
-        Vector3f ambient = cwiseProduct(ka, amb_light_intensity);
-        Vector3f diffuse = cwiseProduct(kd, I / r2) * std::max(0.0f, normal_dir * light_dir);
-        Vector3f specular = cwiseProduct(ks, I / r2) * std::max(0.0f, std::pow(normal_dir * h, p));
+        Vector3f ambient = cwise(ka, amb_light_intensity);
+        Vector3f diffuse = cwise(kd, I / r2) * std::max(0.0f, dot(normal_dir, light_dir));
+        Vector3f specular = cwise(ks, I / r2) * std::max(0.0f, std::pow(dot(normal_dir, h), p));
 
         result_color += ambient + diffuse + specular;
     }
