@@ -35,113 +35,113 @@ extern "C" {
 }
 #endif
 
-template<int n, typename T>
+template <int n, typename T>
 struct vec {
     T data[n];
-    inline T  operator[](int i) const { assert(i >= 0 && i < n); return data[i]; }
-    inline T& operator[](int i)       { assert(i >= 0 && i < n); return data[i]; }
+    inline const T& operator[](int i) const { assert(i >= 0 && i < n); return data[i]; }
+    inline       T& operator[](int i)       { assert(i >= 0 && i < n); return data[i]; }
 };
 
-template<int n, typename T>
+template <int n, typename T>
 vec<n, T> operator+(const vec<n, T>& lv, const vec<n, T>& rv) {
     auto ret = lv;
     for (int i = 0; i < n; i++) { ret[i] += rv[i]; }
     return ret;
 }
-template<int n, typename T>
+template <int n, typename T>
 vec<n, T>& operator+=(vec<n, T>& lv, const vec<n, T>& rv) {
     for (int i = 0; i < n; i++) { lv[i] += rv[i]; }
     return lv;
 }
-template<int n, typename T>
+template <int n, typename T>
 vec<n, T> operator-(const vec<n, T>& lv, const vec<n, T>& rv) {
     auto ret = lv;
     for (int i = 0; i < n; i++) { ret[i] -= rv[i]; }
     return ret;
 }
-template<int n, typename T>
+template <int n, typename T>
 vec<n, T>& operator-=(vec<n, T>& lv, const vec<n, T>& rv) {
     for (int i = 0; i < n; i++) { lv[i] -= rv[i]; }
     return lv;
 }
-template<int n, typename T>
+template <int n, typename T>
 vec<n, T> operator*(const vec<n, T>& lv, const T& va) {
     auto ret = lv;
     for (int i = 0; i < n; i++) { ret[i] *= va; }
     return ret;
 }
-template<int n, typename T>
+template <int n, typename T>
 vec<n, T> operator*(const T& va, const vec<n, T>& rv) {
     return rv * va;
 }
-template<int n, typename T>
+template <int n, typename T>
 vec<n, T> operator/(const vec<n, T>& lv, const T& va) {
     auto ret = lv;
     for (int i = 0; i < n; i++) { ret[i] /= va; }
     return ret;
 }
 
-template<int n, typename T>
+template <int n, typename T>
 FORCEINLINE T dot(const vec<n, T>& lv, const vec<n, T>& rv) {
     T ret = static_cast<T>(0);
     for (int i = 0; i < n; i++) { ret += lv[i] * rv[i]; }
     return ret;
 }
-template<int n, typename T>
+template <int n, typename T>
 FORCEINLINE vec<n, T> cwise(const vec<n, T>& lv, const vec<n, T>& rv) {
     auto ret = lv;
     for (int i = 0; i < n; i++) { ret[i] *= rv[i]; }
     return ret;
 }
-template<int n, typename T>
+template <int n, typename T>
 FORCEINLINE T norm(const vec<n, T>& v) {
     return std::sqrt(dot(v, v));
 }
-template<int n, typename T>
+template <int n, typename T>
 FORCEINLINE T squaredNorm(const vec<n, T>& v) {
     return dot(v, v);
 }
-template<int n, typename T>
+template <int n, typename T>
 FORCEINLINE vec<n, T> normalized(const vec<n, T>& v) {
     T nm = norm(v);
     return (nm > std::numeric_limits<T>::epsilon()) ? (v / nm) : v;
 }
 
-template<typename T>
+template <typename T>
 struct vec<2, T> {
     T x = 0, y = 0;
     vec() = default;
     vec(T va) : x(va), y(va) {}
     vec(T x, T y) : x(x), y(y) {}
-    inline T  operator[](int i) const { assert(i >= 0 && i < 2); return reinterpret_cast<const T*>(this)[i]; }
-    inline T& operator[](int i)       { assert(i >= 0 && i < 2); return reinterpret_cast<      T*>(this)[i]; }
+    inline const T& operator[](int i) const { assert(i >= 0 && i < 2); return reinterpret_cast<const T*>(this)[i]; }
+    inline       T& operator[](int i)       { assert(i >= 0 && i < 2); return reinterpret_cast<      T*>(this)[i]; }
     inline const T* data() const { return reinterpret_cast<const T*>(this); }
     inline       T* data()       { return reinterpret_cast<      T*>(this); }
 };
 
-template<typename T>
+template <typename T>
 struct vec<3, T> {
     T x = 0, y = 0, z = 0;
     vec() = default;
     vec(T va) : x(va), y(va), z(va) {}
     vec(T x, T y, T z) : x(x), y(y), z(z) {}
     vec(const vec<2, T>& v2, T z) : x(v2.x), y(v2.y), z(z) {}
-    inline T  operator[](int i) const { assert(i >= 0 && i < 3); return reinterpret_cast<const T*>(this)[i]; }
-    inline T& operator[](int i)       { assert(i >= 0 && i < 3); return reinterpret_cast<      T*>(this)[i]; }
+    inline const T& operator[](int i) const { assert(i >= 0 && i < 3); return reinterpret_cast<const T*>(this)[i]; }
+    inline       T& operator[](int i)       { assert(i >= 0 && i < 3); return reinterpret_cast<      T*>(this)[i]; }
     inline const T* data() const { return reinterpret_cast<const T*>(this); }
     inline       T* data()       { return reinterpret_cast<      T*>(this); }
     inline vec<2, T> xy() const { return {x, y}; }
 };
 
-template<typename T>
+template <typename T>
 struct vec<4, T> {
     T x = 0, y = 0, z = 0, w = 0;
     vec() = default;
     vec(T va) : x(va), y(va), z(va), w(va) {}
     vec(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
     vec(const vec<3, T>& v3, T w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
-    inline T  operator[](int i) const { assert(i >= 0 && i < 4); return reinterpret_cast<const T*>(this)[i]; }
-    inline T& operator[](int i)       { assert(i >= 0 && i < 4); return reinterpret_cast<      T*>(this)[i]; }
+    inline const T& operator[](int i) const { assert(i >= 0 && i < 4); return reinterpret_cast<const T*>(this)[i]; }
+    inline       T& operator[](int i)       { assert(i >= 0 && i < 4); return reinterpret_cast<      T*>(this)[i]; }
     inline const T* data() const { return reinterpret_cast<const T*>(this); }
     inline       T* data()       { return reinterpret_cast<      T*>(this); }
     inline vec<2, T> xy() const { return {x, y}; }
